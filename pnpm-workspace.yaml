@@ -1,0 +1,5 @@
+packages:
+  - apps/*
+# Report dependency drift without launching unexpected installs during local scripts.
+verifyDepsBeforeRun: warn
+enableGlobalVirtualStore: false

@@ -1,0 +1,1 @@
+return { doc_path="/mnt/onboard/A Book of Days.epub", doc_props={title="A Book of Days",authors="Sam Chen"}, percent_finished=0.32, annotations={{text="每一天都有值得記住的事。",note="Notice something new.",pos0="/body/1",datetime="2026-10-02 10:00:00"}} }
