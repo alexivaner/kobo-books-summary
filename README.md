@@ -17,7 +17,9 @@ A local-first reading knowledge platform for **Kobo, KOReader, and Kobalt**. Kee
 
 ## Public beta
 
-The app supports GitHub Pages through the included build-and-deploy workflow, as well as Cloudflare Pages static hosting. A live URL will be added after deployment is verified.
+[Open the app](https://alexivaner.github.io/kobo-books-summary/) · [About the project](https://alexivaner.github.io/kobo-books-summary/welcome/)
+
+The public website is hosted on GitHub Pages. Main-branch pushes run checks, verify the deployment paths and publish automatically. Cloudflare Pages static hosting remains supported; see the deployment guide.
 
 Public beta: imports and library storage stay in your browser. Optional Open Library lookup is off until enabled. Back up regularly; site data can be cleared. See [PRIVACY.md](PRIVACY.md).
 

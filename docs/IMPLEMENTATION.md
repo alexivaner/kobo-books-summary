@@ -71,3 +71,6 @@ Static Next.js export is assembled in root `out`, including the post-build servi
 The shelf groups verified same-file and ISBN records, with reversible manual grouping/splitting stored as optional source-book fields. Original annotations, source ids, sessions and history remain intact. Main-card progress comes from the latest dated source; per-reader values remain visible. Times are not combined across group members.
 
 Local validation: production export, TypeScript, ESLint, synthetic unit regressions and browser regressions, including an OPFS library retained across a complete browser-process restart. Open Library browser tests use deterministic mock responses; provider availability and catalog coverage remain external limitations. Physical-device validation is opt-in and separate from these synthetic checks.
+
+
+Public hosting verification — 2026-11-05: GitHub Actions run 41951451005 passed root regressions, a prefixed artifact build, the prefixed SQLite/import/offline smoke test, and Pages deployment. Two additional tests passed against https://alexivaner.github.io/kobo-books-summary/: a synthetic import into OPFS/SQLite with offline reopening, and desktop/mobile welcome/app navigation without page errors. Live provider catalog coverage and physical device behavior are separate from these synthetic browser checks.

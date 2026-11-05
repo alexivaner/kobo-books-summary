@@ -1,6 +1,6 @@
 # Security and privacy
 
-Please report vulnerabilities privately to the maintainer through an appropriate private GitHub channel. Do not publish a real user's reading database, highlights or credentials in an issue.
+Please [report vulnerabilities privately through GitHub](https://github.com/alexivaner/kobo-books-summary/security/advisories/new). Private vulnerability reporting is enabled for this repository. Do not publish a real user's reading database, highlights or credentials in an issue.
 
 Reading data is processed in a worker and persisted inside the browser origin/profile. It is not encrypted with an application-specific password. Browser data deletion can erase it, so keep portable backups. The application has no account system, telemetry, annotation upload endpoint or mandatory remote database.
 
