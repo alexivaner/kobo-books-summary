@@ -5,7 +5,7 @@ export default defineConfig({
   workers: 1,
   timeout: 60000,
   use: {
-    baseURL: "http://127.0.0.1:3000",
+    baseURL: process.env.TEST_BASE_URL || "http://127.0.0.1:3000",
     channel: process.env.PLAYWRIGHT_CHANNEL || "chrome",
     headless: true,
     viewport: { width: 1440, height: 1000 },
@@ -13,7 +13,7 @@ export default defineConfig({
   reporter: "list",
   webServer: {
     command: "pnpm start",
-    url: "http://127.0.0.1:3000",
+    url: process.env.TEST_BASE_URL || "http://127.0.0.1:3000",
     reuseExistingServer: !process.env.CI,
     timeout: 120000,
   },

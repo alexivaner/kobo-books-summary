@@ -74,6 +74,9 @@ export function importKobalt(db: Database, deviceId: string): Preview {
       if (state.book) b.path = normalizePath(str(state.book));
       const percent = number(state.percent);
       if (percent !== null) b.progress = Math.max(0, Math.min(100, percent));
+      b.sourceCompletionMarker =
+        typeof state.finished_position === "string" &&
+        state.finished_position.length > 0;
       const native = state.nickel_progress as Row | undefined;
       const finished = native?.valid === true && Number(native.status) === 2;
       b.status = finished

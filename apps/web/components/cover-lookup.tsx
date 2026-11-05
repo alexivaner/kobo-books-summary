@@ -8,6 +8,7 @@ import {
   type CoverCandidate,
 } from "../../../packages/covers";
 import Modal from "./modal";
+import { validISBN } from "../../../packages/core/grouping";
 export default function CoverLookup({
   book,
   onClose,
@@ -17,6 +18,9 @@ export default function CoverLookup({
   onClose: () => void;
   onSave: (cover: string, pageUrl: string) => Promise<boolean>;
 }) {
+  const [searchTitle, setSearchTitle] = useState(book.title);
+  const [searchAuthor, setSearchAuthor] = useState(book.author);
+  const [useISBN, setUseISBN] = useState(!!validISBN(book.isbn));
   const [candidates, setCandidates] = useState<CoverCandidate[] | null>(null),
     [busy, setBusy] = useState(false),
     [error, setError] = useState("");
@@ -33,6 +37,44 @@ export default function CoverLookup({
         <p>{book.author}</p>
         {book.isbn && <small>ISBN {book.isbn}</small>}
       </div>
+      <label>
+        Search title
+        <input
+          aria-label="Cover search title"
+          value={searchTitle}
+          onChange={(e) => {
+            setSearchTitle(e.target.value);
+            setCandidates(null);
+          }}
+        />
+      </label>
+      <label>
+        Search author
+        <input
+          aria-label="Cover search author"
+          value={searchAuthor}
+          onChange={(e) => {
+            setSearchAuthor(e.target.value);
+            setCandidates(null);
+          }}
+        />
+      </label>
+      {validISBN(book.isbn) && (
+        <label className="check-label">
+          <input
+            type="checkbox"
+            checked={useISBN}
+            onChange={(e) => {
+              setUseISBN(e.target.checked);
+              setCandidates(null);
+            }}
+          />
+          Use ISBN for lookup
+        </label>
+      )}
+      <p className="muted">
+        Editing a search does not change your imported metadata.
+      </p>
       <p className="muted">
         Artwork is supplied by Open Library and may be unavailable or belong to
         another edition. Review the match before saving. A private browser copy
@@ -51,7 +93,13 @@ export default function CoverLookup({
             setBusy(true);
             setError("");
             try {
-              setCandidates(await findCovers(book));
+              setCandidates(
+                await findCovers({
+                  title: searchTitle.trim() || book.title,
+                  author: searchAuthor.trim() || "Unknown author",
+                  isbn: useISBN ? book.isbn : undefined,
+                }),
+              );
             } catch (e) {
               setError(e instanceof Error ? e.message : "Lookup failed");
             } finally {
