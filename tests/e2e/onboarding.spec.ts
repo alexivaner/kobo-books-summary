@@ -70,6 +70,9 @@ test("compact source cards and guided imports fit a dark mobile viewport", async
   await page.goto("/#import");
   await expect(page.getByText("Opening your local library…")).toBeHidden();
   await page.getByRole("button", { name: "My Kobo is connected" }).click();
+  await expect(
+    page.getByRole("heading", { name: "Choose your Kobo’s folder." }),
+  ).toBeInViewport();
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= innerWidth,
