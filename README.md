@@ -15,7 +15,9 @@ Formerly Kobo Books Summary. A local-first reading knowledge platform for **Kobo
 - Use local Kobo/EPUB covers first. Optional automatic enrichment looks up the reading library in grouped requests, saves confident covers/metadata, and resumes pending work. **Find cover** remains available for manual review. Both disclose the metadata shared; cached results work offline.
 - Track **ever finished** and recorded completion dates separately from current progress. Label rereading as observed/inferred, preserve known history across imports, and distinguish start counters from reread counts.
 - Export book notes to Markdown/JSON, and back up or restore the complete local library.
-- Responsive light/dark interface, recorded activity calendar, and offline browsing after the production app has loaded.
+- Browse **Personal notes** separately: reader notes, standalone notes, and your own saved reflections, with search and book links.
+- Explore **Reading rhythm** by month and day, including session times, books and reader filters. Only dated source sessions populate the calendar; aggregate book totals do not invent daily history.
+- Readable light/dark interface with larger body text and controls, and offline browsing after the production app has loaded.
 
 ## Public beta
 

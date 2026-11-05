@@ -74,3 +74,10 @@ Local validation: production export, TypeScript, ESLint, synthetic unit regressi
 
 
 Public hosting verification — 2026-11-05: GitHub Actions run 41951451005 passed root regressions, a prefixed artifact build, the prefixed SQLite/import/offline smoke test, and Pages deployment. Two additional tests passed against https://alexivaner.github.io/kobo-books-summary/: a synthetic import into OPFS/SQLite with offline reopening, and desktop/mobile welcome/app navigation without page errors. Live provider catalog coverage and physical device behavior are separate from these synthetic browser checks.
+
+
+## Personal notes and reading rhythm
+
+Personal notes separates imported reader notes (including standalone notes) from saved reflections. Passage context stays collapsed, with reader provenance, search, archived-note inclusion and links back to grouped book details. Source annotations remain unchanged.
+
+Reading rhythm uses valid, positive-duration dated sessions, deduplicated by session id. Month summaries and day session lists use browser-local dates and retain reader provenance. Independent readers may overlap; a reader filter allows inspecting each separately. Kobo aggregate book time does not populate dated activity. The overview links directly to these views. Typography uses a 16 px body, 18 px personal notes and larger quotation text, with responsive controls.

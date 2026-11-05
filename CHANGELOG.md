@@ -2,6 +2,10 @@
 
 ## 0.1.0 — Public beta
 
+- Dedicated personal notes and reflections view, searchable with reader provenance and passage context.
+- Detailed monthly reading calendar with per-day sessions and reader filters; source totals never invent daily history.
+- Larger typography and responsive controls throughout the workspace.
+
 - Readmory identity: forest/sage/cream themes, editorial typography, book/bookmark mark, owner-supplied R artwork, and offline brand assets. Existing vaults, backups and URLs remain compatible.
 
 - Local imports for Kobo, KOReader and Kobalt, with previews separated from the reading shelf.

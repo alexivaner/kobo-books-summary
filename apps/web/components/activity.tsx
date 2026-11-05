@@ -7,6 +7,7 @@ import {
   TooltipComponent,
   VisualMapComponent,
 } from "echarts/components";
+import { dayKey } from "../../../packages/analytics/rhythm";
 import { CanvasRenderer } from "echarts/renderers";
 echarts.use([
   HeatmapChart,
@@ -23,55 +24,75 @@ export default function Activity({ entries }: { entries: [string, number][] }) {
     const end = new Date(),
       start = new Date();
     start.setMonth(start.getMonth() - 5);
-    chart.setOption({
-      animation: false,
-      tooltip: {
-        formatter: (p: unknown) => {
-          const d = (p as { data?: [string, number] }).data;
-          return d ? `${d[0]} · ${Math.round(d[1] / 60)} recorded minutes` : "";
+    const paint = () => {
+      const style = getComputedStyle(document.documentElement),
+        ink = style.getPropertyValue("--ink").trim(),
+        muted = style.getPropertyValue("--muted").trim(),
+        paper = style.getPropertyValue("--paper").trim(),
+        bg = style.getPropertyValue("--bg").trim(),
+        dark = document.documentElement.dataset.theme === "dark";
+      chart.setOption({
+        textStyle: { fontSize: 14 },
+        animation: false,
+        tooltip: {
+          backgroundColor: paper,
+          borderColor: muted,
+          textStyle: { color: ink, fontSize: 14 },
+          formatter: (p: unknown) => {
+            const d = (p as { data?: [string, number] }).data;
+            return d
+              ? `${d[0]} · ${Math.round(d[1] / 60)} recorded minutes`
+              : "";
+          },
         },
-      },
-      visualMap: {
-        show: false,
-        min: 0,
-        max: 7200,
-        inRange: {
-          color: ["#e9eee6", "#c8d9ba", "#91b17e", "#5e8651", "#345c3a"],
+        visualMap: {
+          show: false,
+          min: 0,
+          max: 7200,
+          inRange: {
+            color: dark
+              ? [bg, "#42623d", "#70935d", "#94b87b", "#a9cc8a"]
+              : [bg, "#e0ead4", "#bad0a1", "#72955d", "#2f4a3c"],
+          },
         },
-      },
-      calendar: {
-        top: 26,
-        left: 32,
-        right: 12,
-        bottom: 12,
-        cellSize: ["auto", 15],
-        range: [
-          start.toISOString().slice(0, 10),
-          end.toISOString().slice(0, 10),
+        calendar: {
+          top: 26,
+          left: 32,
+          right: 12,
+          bottom: 12,
+          cellSize: ["auto", 15],
+          range: [dayKey(start.toISOString()), dayKey(end.toISOString())],
+          splitLine: { show: false },
+          itemStyle: {
+            borderColor: "transparent",
+            borderWidth: 3,
+            color: bg,
+          },
+          yearLabel: { show: false },
+          dayLabel: {
+            firstDay: 1,
+            color: muted,
+            fontSize: 12,
+            nameMap: ["S", "M", "T", "W", "T", "F", "S"],
+          },
+          monthLabel: { color: muted, fontSize: 13 },
+        },
+        series: [
+          { type: "heatmap", coordinateSystem: "calendar", data: entries },
         ],
-        splitLine: { show: false },
-        itemStyle: {
-          borderColor: "transparent",
-          borderWidth: 3,
-          color: "#e9eee6",
-        },
-        yearLabel: { show: false },
-        dayLabel: {
-          firstDay: 1,
-          color: "#82897d",
-          fontSize: 9,
-          nameMap: ["S", "M", "T", "W", "T", "F", "S"],
-        },
-        monthLabel: { color: "#82897d", fontSize: 10 },
-      },
-      series: [
-        { type: "heatmap", coordinateSystem: "calendar", data: entries },
-      ],
+      });
+    };
+    paint();
+    const theme = new MutationObserver(paint);
+    theme.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["data-theme"],
     });
     const obs = new ResizeObserver(() => chart.resize());
     obs.observe(ref.current);
     return () => {
       obs.disconnect();
+      theme.disconnect();
       chart.dispose();
     };
   }, [entries]);
@@ -80,7 +101,7 @@ export default function Activity({ entries }: { entries: [string, number][] }) {
       role="img"
       aria-label={`Recorded reading activity across ${entries.length} days`}
       ref={ref}
-      style={{ height: 165, width: "100%" }}
+      style={{ height: 185, width: "100%" }}
     />
   );
 }
