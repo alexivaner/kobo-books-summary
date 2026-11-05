@@ -2,6 +2,8 @@
 
 ## 0.1.0 — Public beta
 
+- Readmory identity: forest/sage/cream themes, editorial typography, book/bookmark mark, owner-supplied R artwork, and offline brand assets. Existing vaults, backups and URLs remain compatible.
+
 - Local imports for Kobo, KOReader and Kobalt, with previews separated from the reading shelf.
 - Guided USB import with platform-specific file help; compact reader comparison cards with expandable history and book-match controls.
 - Bookshelf, annotations, knowledge topics, reflections, activity and portable backups.

@@ -1,6 +1,6 @@
 # Privacy
 
-Kobo Books Summary parses selected Kobo, KOReader and Kobalt files in your browser. Imported databases, annotations, reading history, notes and reflections are not uploaded to this project's server. There is no account, application cloud database, analytics tracker or payment backend.
+Readmory parses selected Kobo, KOReader and Kobalt files in your browser. Imported databases, annotations, reading history, notes and reflections are not uploaded to this project's server. There is no account, application cloud database, analytics tracker or payment backend.
 
 Your library is saved in browser storage using SQLite WASM with OPFS, or IndexedDB when OPFS is unavailable. The same browser profile and website origin are required to reopen it. Clearing site data, private browsing, storage eviction or device loss can remove it. Download portable backups regularly and protect them: they contain your private reading information. Switching domains or profiles requires explicit backup/restore; the application does not transfer data automatically.
 
