@@ -26,3 +26,36 @@ jobs:
       - run: pnpm build
       - run: pnpm exec playwright install --with-deps chromium
       - run: pnpm test:e2e
+      - name: Build GitHub Pages artifact
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: pnpm build
+        env:
+          NEXT_PUBLIC_BASE_PATH: /kobo-books-summary
+      - name: Verify GitHub Pages paths and offline storage
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: pnpm test:e2e tests/e2e/basepath.spec.ts
+        env:
+          E2E_BASE_PATH: /kobo-books-summary
+          TEST_BASE_URL: http://127.0.0.1:3000/kobo-books-summary/
+      - uses: actions/upload-pages-artifact@v4
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        with:
+          path: out
+  deploy:
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    needs: verify
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    concurrency:
+      group: github-pages
+      cancel-in-progress: false
+    steps:
+      - name: Deploy public app
+        id: deployment
+        uses: actions/deploy-pages@v4

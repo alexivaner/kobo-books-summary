@@ -53,6 +53,7 @@ import AutomaticEnrichment from "./automatic-enrichment";
 import { BookHistory, EnrichedMetadata } from "./book-history";
 import { readingHistoryLabel } from "../../../packages/core/history";
 import type { Update } from "../../../packages/enrichment";
+import { appPath } from "../lib/paths";
 import { SUPPORT_URL } from "../lib/links";
 import { groupBooks } from "../../../packages/core/grouping";
 const nav = [
@@ -210,7 +211,7 @@ export default function Workspace() {
     document.documentElement.dataset.theme = saved;
     if (process.env.NODE_ENV === "production" && "serviceWorker" in navigator)
       navigator.serviceWorker
-        .register("/sw.js")
+        .register(appPath("/sw.js"))
         .then(async () => {
           const registration = await navigator.serviceWorker.ready;
           const urls = [
@@ -223,7 +224,7 @@ export default function Workspace() {
               const url = new URL(u);
               return (
                 url.origin === location.origin &&
-                url.pathname.startsWith("/_next/static/")
+                url.pathname.startsWith(appPath("/_next/static/"))
               );
             } catch {
               return false;
@@ -642,7 +643,7 @@ export default function Workspace() {
           ))}
         </nav>
         <div className="sidebar-bottom">
-          <a className="nav-item" href="/welcome/">
+          <a className="nav-item" href={appPath("/welcome/")}>
             About this project ↗
           </a>
           <a

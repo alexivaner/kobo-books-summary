@@ -1,10 +1,11 @@
 import { BookOpen, ShieldCheck, Quote, Library } from "lucide-react";
+import { appPath } from "../../lib/paths";
 import { SUPPORT_URL, GITHUB_URL } from "../../lib/links";
 export default function Welcome() {
   return (
     <main className="welcome">
       <nav>
-        <a href="/" className="brand">
+        <a href={appPath("/")} className="brand">
           <BookOpen /> Kobo Books Summary
         </a>
         <a href={GITHUB_URL} target="_blank" rel="noopener noreferrer">
@@ -23,7 +24,7 @@ export default function Welcome() {
           personal knowledge library.
         </p>
         <div className="actions">
-          <a className="primary" href="/">
+          <a className="primary" href={appPath("/")}>
             Open App →
           </a>
           <a

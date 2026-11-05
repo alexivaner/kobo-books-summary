@@ -43,3 +43,10 @@ For Pages, roll back to a prior successful deployment in its dashboard. For Site
 - Another tab owns the library: close that tab and reload; the Web Lock prevents concurrent writers.
 - Metadata missing: check lookup consent, status/backoff, ISBN/edition coverage and manual Find cover. No provider can guarantee every cover.
 - Library appears empty on another URL/browser: restore a backup; origins and profiles are intentionally isolated.
+
+
+## GitHub Pages public hosting
+
+The GitHub Actions workflow also supports publishing to GitHub Pages without a separate hosting token. Enable Pages with build type `workflow`. Main pushes run the root-path regression suite, build again with `NEXT_PUBLIC_BASE_PATH=/kobo-books-summary`, test the prefixed worker/WASM/offline paths, and deploy the artifact using GitHub-managed OIDC permissions. Pull requests run checks without deploying.
+
+The expected URL is `https://alexivaner.github.io/kobo-books-summary/`. GitHub Pages does not apply Cloudflare `_headers`; do not claim the Cloudflare response-header policy is active there. Parsing, persistence, consent controls and explicit no-referrer API fetches remain in the client. Cloudflare builds leave `NEXT_PUBLIC_BASE_PATH` unset and use root `out` as before. Sites remains an optional hosting route; its publishing credential handoff was blocked during the initial public-release session, so no Sites publication should be inferred from the hosting manifest.
