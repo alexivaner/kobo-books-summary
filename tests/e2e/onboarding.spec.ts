@@ -6,7 +6,7 @@ test("guided connection explains files and advances to review before saving", as
   await page.goto("/#import");
   await expect(page.getByText("Opening your local library…")).toBeHidden();
   await expect(
-    page.getByRole("heading", { name: "Bring your Kobo to your computer." }),
+    page.getByRole("heading", { name: "Connect your Kobo." }),
   ).toBeVisible();
   await expect(
     page.getByLabel("Import progress").locator('[aria-current="step"]'),
@@ -17,7 +17,7 @@ test("guided connection explains files and advances to review before saving", as
   });
   await page.getByRole("button", { name: "My Kobo is connected" }).click();
   await expect(
-    page.getByRole("heading", { name: "Choose your Kobo’s folder." }),
+    page.getByRole("heading", { name: "Choose your files." }),
   ).toBeVisible();
   await page
     .getByText("Choosing individual files? Here’s where to find them.", {
@@ -48,7 +48,7 @@ test("guided connection explains files and advances to review before saving", as
   ).toContainText("Review & save");
   await expect(
     page.getByRole("heading", {
-      name: "Your reading data is ready to review.",
+      name: "Ready to import",
     }),
   ).toBeVisible();
   await page.getByRole("button", { name: "Import into my library" }).click();
@@ -56,10 +56,7 @@ test("guided connection explains files and advances to review before saving", as
     page.getByRole("heading", { name: "The Quiet Atlas", exact: true }),
   ).toBeVisible();
   await expect(
-    page.getByText(
-      "Your library is saved. You can safely eject your Kobo and keep reading here—even offline.",
-      { exact: true },
-    ),
+    page.getByText("Library saved. You can eject your Kobo.", { exact: true }),
   ).toBeVisible();
 });
 test("compact source cards and guided imports fit a dark mobile viewport", async ({
@@ -71,7 +68,7 @@ test("compact source cards and guided imports fit a dark mobile viewport", async
   await expect(page.getByText("Opening your local library…")).toBeHidden();
   await page.getByRole("button", { name: "My Kobo is connected" }).click();
   await expect(
-    page.getByRole("heading", { name: "Choose your Kobo’s folder." }),
+    page.getByRole("heading", { name: "Choose your files." }),
   ).toBeInViewport();
   expect(
     await page.evaluate(
@@ -95,4 +92,51 @@ test("compact source cards and guided imports fit a dark mobile viewport", async
       () => document.documentElement.scrollWidth <= innerWidth,
     ),
   ).toBe(true);
+});
+
+test("file selection shows measured progress and comfortably sized controls", async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    const original = File.prototype.arrayBuffer;
+    File.prototype.arrayBuffer = async function () {
+      await new Promise<void>((resolve) => {
+        (window as unknown as { resumeFileRead: () => void }).resumeFileRead =
+          resolve;
+      });
+      return original.call(this);
+    };
+  });
+  await page.goto("/#import");
+  await expect(page.getByText("Opening your local library…")).toBeHidden();
+  await page.getByRole("button", { name: "My Kobo is connected" }).click();
+  for (const name of ["Select Kobo folder", "Select source files"]) {
+    const b = page.getByRole("button", { name, exact: true });
+    const box = await b.boundingBox();
+    expect(box!.height).toBeGreaterThanOrEqual(44);
+  }
+  await page
+    .getByLabel("Select Kobo source files", { exact: true })
+    .setInputFiles(path.resolve("fixtures/generated/KoboReader.sqlite"));
+  const bar = page.getByRole("progressbar", {
+    name: "Reading your files",
+    exact: true,
+  });
+  await expect(bar).toBeVisible();
+  await expect(bar).toHaveAttribute("max", "1");
+  await expect(
+    page.getByRole("region", { name: "Preparing import" }),
+  ).toContainText("0 of 1 files");
+  await page.evaluate(() =>
+    (window as unknown as { resumeFileRead: () => void }).resumeFileRead(),
+  );
+  await expect(
+    page.getByRole("heading", { name: "Ready to import", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("region", { name: "Preparing import" }),
+  ).toBeHidden();
+  await expect(
+    page.getByRole("button", { name: "Import into my library" }),
+  ).toBeEnabled();
 });

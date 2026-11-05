@@ -70,6 +70,7 @@ export function download(
 export async function readFiles(
   files: { path: string; file: File }[],
   progress: (s: string) => void,
+  onRead?: (completed: number, total: number) => void,
 ) {
   if (files.length > 15000)
     throw Error("Too many files. Select databases and sidecars separately.");
@@ -101,12 +102,14 @@ export async function readFiles(
     selected.push(f);
   }
   const result = [];
+  onRead?.(0, selected.length);
   for (let i = 0; i < selected.length; i++) {
     progress(`Reading selected files · ${i + 1} of ${selected.length}`);
     result.push({
       path: selected[i].path,
       bytes: new Uint8Array(await selected[i].file.arrayBuffer()),
     });
+    onRead?.(i + 1, selected.length);
   }
   return result;
 }
