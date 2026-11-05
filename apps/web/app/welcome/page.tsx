@@ -68,6 +68,41 @@ export default function Welcome() {
           </article>
         ))}
       </section>
+      <section
+        className="welcome-import"
+        aria-labelledby="welcome-import-title"
+      >
+        <span className="eyebrow">FROM YOUR READER TO YOUR READING SPACE</span>
+        <h2 id="welcome-import-title">A few minutes. A library to keep.</h2>
+        <ol>
+          {[
+            [
+              "01",
+              "Connect your Kobo",
+              "Plug it into your computer with USB and tap Connect on its screen.",
+            ],
+            [
+              "02",
+              "Choose your reading data",
+              "Our guide helps you find the Kobo folder, or the files for your reader.",
+            ],
+            [
+              "03",
+              "Make yourself at home",
+              "Review and save, then disconnect. Your library stays in this browser.",
+            ],
+          ].map(([n, title, text]) => (
+            <li key={n}>
+              <span>{n}</span>
+              <h3>{title}</h3>
+              <p>{text}</p>
+            </li>
+          ))}
+        </ol>
+        <a className="primary" href={appPath("/#import")}>
+          Start guided import →
+        </a>
+      </section>
       <footer>
         <p>
           Browser storage can be cleared. Back up your library regularly.

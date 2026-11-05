@@ -47,6 +47,8 @@ import {
 import { markdown } from "../../../packages/export";
 import { call, initialize, download, readFiles } from "../lib/client";
 import Activity from "./activity";
+import ImportGuide from "./import-guide";
+import ReaderSources from "./reader-sources";
 import Modal from "./modal";
 import CoverLookup from "./cover-lookup";
 import AutomaticEnrichment from "./automatic-enrichment";
@@ -157,7 +159,6 @@ export default function Workspace() {
     [knowledgeLimit, setKnowledgeLimit] = useState(40),
     [libraryLimit, setLibraryLimit] = useState(48),
     [storageEstimate, setStorageEstimate] = useState("Checking…");
-  const [combineTarget, setCombineTarget] = useState("");
   const sourceData = useMemo(
     () => readingLibrary(storedData, includeStore),
     [storedData, includeStore],
@@ -869,84 +870,26 @@ export default function Workspace() {
                   </div>
                 </div>
               </section>
-              <section className="panel" aria-label="Reader sources">
-                <h2>Reader sources</h2>
-                <p className="muted">
-                  One shelf entry; original progress, history and annotations
-                  remain separate. The card uses the latest dated source.
-                  Reading times can overlap.
-                </p>
-                {activeGroup?.members.map((b) => (
-                  <div className="history-row" key={b.id}>
-                    <div>
-                      <strong>
-                        {b.source} · {b.title}
-                      </strong>
-                      <p>
-                        {b.progress === null
-                          ? "Progress unavailable"
-                          : Math.round(b.progress) + "%"}{" "}
-                        · {b.status} · Last read: {date(b.lastRead)}
-                      </p>
-                      <BookHistory book={b} />
-                    </div>
-                  </div>
-                ))}
-                {(activeGroup?.members.length || 0) > 1 && (
-                  <button
-                    className="secondary"
-                    onClick={() =>
-                      mutate(
-                        "group",
-                        { ids: [...activeIds], split: true },
-                        "Sources separated; all original records retained.",
-                      )
-                    }
-                  >
-                    Keep sources separate
-                  </button>
-                )}
-                <label>
-                  Combine with another shelf entry
-                  <select
-                    aria-label="Combine with another shelf entry"
-                    value={combineTarget}
-                    onChange={(e) => setCombineTarget(e.target.value)}
-                  >
-                    <option value="">Choose the same book / edition…</option>
-                    {data.books
-                      .filter((b) => !activeIds.has(b.id))
-                      .map((b) => (
-                        <option key={b.id} value={b.id}>
-                          {b.title} · {b.author} · {b.source}
-                        </option>
-                      ))}
-                  </select>
-                </label>
-                <p className="muted">
-                  Confirm the same edition and language before combining. You
-                  can separate sources again.
-                </p>
-                <button
-                  className="secondary"
-                  disabled={!combineTarget || disabled}
-                  onClick={() => {
-                    mutate(
-                      "group",
-                      {
-                        ids: [
-                          ...activeIds,
-                          ...membersFor(combineTarget).map((b) => b.id),
-                        ],
-                      },
-                      "Combined shelf entries; source data preserved.",
-                    );
-                    setCombineTarget("");
-                  }}
-                >
-                  Combine selected book
-                </button>
-              </section>
+              <ReaderSources
+                key={activeBook.id}
+                members={activeGroup?.members || []}
+                books={data.books}
+                disabled={disabled}
+                onSeparate={() =>
+                  mutate(
+                    "group",
+                    { ids: [...activeIds], split: true },
+                    "Sources separated; all original records retained.",
+                  )
+                }
+                onCombine={(id) =>
+                  mutate(
+                    "group",
+                    { ids: [...activeIds, ...membersFor(id).map((b) => b.id)] },
+                    "Combined shelf entries; source data preserved.",
+                  )
+                }
+              />
               {activeBook.coverSource === "openlibrary" && (
                 <p className="muted">
                   Cover via{" "}
@@ -1645,66 +1588,52 @@ export default function Workspace() {
                   <div className="import-layout">
                     <section>
                       <div className="panel connect-panel">
-                        <div className="connect-illustration">
-                          <div className="ereader">
-                            <BookOpen size={34} />
-                            <div />
-                            <div />
-                            <span>YOUR NEXT CHAPTER</span>
+                        <ImportGuide hasPreview={!!preview}>
+                          <label className="field-label" htmlFor="device">
+                            Kobo name{" "}
+                            <span>
+                              Use the same name each time you import this Kobo.
+                            </span>
+                          </label>
+                          <input
+                            id="device"
+                            className="text-input"
+                            value={device}
+                            maxLength={100}
+                            onChange={(e) => {
+                              setDevice(e.target.value);
+                              setPreview(null);
+                            }}
+                          />
+                          <div className="button-row">
+                            <button
+                              className="primary"
+                              disabled={disabled || !device.trim()}
+                              onClick={pickFolder}
+                            >
+                              <Usb size={17} />
+                              Select Kobo folder
+                            </button>
+                            <button
+                              className="secondary"
+                              disabled={disabled || !device.trim()}
+                              onClick={() => fileRef.current?.click()}
+                            >
+                              <Upload size={16} />
+                              Select source files
+                            </button>
                           </div>
-                          <div className="usb-line" />
-                          <Usb size={26} />
-                        </div>
-                        <h2>Meet your library again.</h2>
-                        <p>
-                          Connect your Kobo with USB, then tap{" "}
-                          <strong>Connect</strong> on its screen.
-                          <br />
-                          Select the mounted Kobo folder to discover your
-                          reading data.
-                        </p>
-                        <label className="field-label" htmlFor="device">
-                          Device identity{" "}
-                          <span>Reuse this name for incremental imports.</span>
-                        </label>
-                        <input
-                          id="device"
-                          className="text-input"
-                          value={device}
-                          maxLength={100}
-                          onChange={(e) => {
-                            setDevice(e.target.value);
-                            setPreview(null);
-                          }}
-                        />
-                        <div className="button-row">
                           <button
-                            className="primary"
-                            disabled={disabled || !device.trim()}
-                            onClick={pickFolder}
+                            className="text-link"
+                            disabled={disabled}
+                            onClick={() => folderRef.current?.click()}
                           >
-                            <Usb size={17} />
-                            Select Kobo folder
+                            Use standard folder picker
                           </button>
-                          <button
-                            className="secondary"
-                            disabled={disabled || !device.trim()}
-                            onClick={() => fileRef.current?.click()}
-                          >
-                            <Upload size={16} />
-                            Select source files
-                          </button>
-                        </div>
-                        <button
-                          className="text-link"
-                          disabled={disabled}
-                          onClick={() => folderRef.current?.click()}
-                        >
-                          Use standard folder picker
-                        </button>
-                        <small className="muted">
-                          Read-only access. No files on your Kobo are changed.
-                        </small>
+                          <small className="muted">
+                            Read-only access. No files on your Kobo are changed.
+                          </small>
+                        </ImportGuide>
                         <input
                           className="sr-only"
                           type="file"
@@ -1845,7 +1774,7 @@ export default function Workspace() {
                                   );
                                   setPreview(null);
                                   setNotice(
-                                    "Your reading library is safely stored on this device.",
+                                    "Your library is saved. You can safely eject your Kobo and keep reading here—even offline.",
                                   );
                                   navigate("library");
                                 } catch (e) {
@@ -1872,54 +1801,65 @@ export default function Workspace() {
                       )}
                     </section>
                     <aside>
-                      <section className="panel import-help">
-                        <span className="eyebrow">A QUICK GUIDE</span>
-                        <h2>Three little steps.</h2>
-                        {[
-                          [
-                            "01",
-                            "Plug in & connect",
-                            "Connect by USB and enable storage mode on your Kobo.",
-                          ],
-                          [
-                            "02",
-                            "Choose your source",
-                            "Select the mounted folder, or choose individual databases and sidecars.",
-                          ],
-                          [
-                            "03",
-                            "Review & bring it home",
-                            "Preview your data, confirm, and disconnect when you’re ready.",
-                          ],
-                        ].map(([n, t, p]) => (
-                          <div className="step" key={n}>
-                            <span>{n}</span>
-                            <div>
-                              <h3>{t}</h3>
-                              <p>{p}</p>
-                            </div>
+                      <section className="panel import-help import-reassurance">
+                        <span className="eyebrow">A LITTLE PEACE OF MIND</span>
+                        <h2>Just your reading.</h2>
+                        <div className="import-assurance">
+                          <ShieldCheck size={19} />
+                          <div>
+                            <h3>Your Kobo stays yours</h3>
+                            <p>
+                              We read the files you choose. Nothing is
+                              installed, deleted or changed on your reader.
+                            </p>
                           </div>
-                        ))}
-                        <div className="divider" />
-                        <strong>Native Kobo + KOReader + Kobalt</strong>
-                        <p className="muted">
-                          KoboReader.sqlite · statistics.sqlite3 · kobalt.sqlite
-                          · metadata.*.lua
-                        </p>
+                        </div>
+                        <div className="import-assurance">
+                          <BookOpen size={19} />
+                          <div>
+                            <h3>Pick up where you left off</h3>
+                            <p>
+                              Books, highlights and notes stay in this browser
+                              after you disconnect. No account needed.
+                            </p>
+                          </div>
+                        </div>
+                        <div className="import-assurance">
+                          <Download size={19} />
+                          <div>
+                            <h3>Keep a copy for yourself</h3>
+                            <p>
+                              After importing, open Settings and download a
+                              backup. Restore it to move your library to another
+                              browser or device.
+                            </p>
+                          </div>
+                        </div>
                         <details>
-                          <summary>Can’t see hidden folders?</summary>
+                          <summary>Importing again?</summary>
                           <p>
-                            Press Cmd + Shift + . in the macOS picker. Open
-                            .kobo for the native database, or
-                            .adds/koreader/settings for statistics. Select
-                            sidecars separately if needed.
+                            Use the same Kobo name. We update matching records
+                            and keep your saved topics and reflections. This is
+                            a manual import; new reading won’t appear until you
+                            import again.
                           </p>
+                        </details>
+                        <details>
+                          <summary>A file says it’s still in use</summary>
                           <p>
-                            For a database with WAL/journal files, use the
-                            included snapshot helper described in the README.
-                            Keep companion files selected so the app can detect
-                            them.
+                            Keep your Kobo on its USB connection screen. If the
+                            app reports a database journal, make a safe snapshot
+                            with the helper in the project README. Select
+                            companion files too so the app can check them.
                           </p>
+                          <a
+                            href="https://github.com/alexivaner/kobo-books-summary#safe-snapshots"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-link"
+                          >
+                            Snapshot instructions ↗
+                          </a>
                         </details>
                       </section>
                     </aside>

@@ -25,6 +25,7 @@ test("manual combine and split preserve annotations and latest progress across r
   await page
     .getByRole("heading", { name: "The Quiet Atlas", exact: true })
     .click();
+  await page.getByText("Manage book matches", { exact: true }).click();
   await page
     .getByLabel("Combine with another shelf entry")
     .selectOption({ label: "Small Observations · Robin Lane · kobo" });
@@ -34,11 +35,19 @@ test("manual combine and split preserve annotations and latest progress across r
   await expect(
     page.getByRole("region", { name: "Reader sources" }),
   ).toContainText("Small Observations");
+  if (
+    (await page.locator(".book-match-settings").getAttribute("open")) !== null
+  )
+    await page.getByText("Manage book matches", { exact: true }).click();
+  await page
+    .locator(".reader-sources")
+    .screenshot({ path: "/private/tmp/kobo-reader-sources.png" });
   await page.getByRole("button", { name: "My library", exact: true }).click();
   await expect(page.locator(".book-card")).toHaveCount(1);
   await page.reload();
   await expect(page.locator(".book-card")).toHaveCount(1);
   await page.locator(".book-card").click();
+  await page.getByText("Manage book matches", { exact: true }).click();
   await page.getByRole("button", { name: "Keep sources separate" }).click();
   await page.getByRole("button", { name: "My library", exact: true }).click();
   await expect(page.locator(".book-card")).toHaveCount(2);
