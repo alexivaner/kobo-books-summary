@@ -50,7 +50,7 @@ export default function AutomaticEnrichment({
   onSave: (updates: Update[]) => Promise<void>;
 }) {
   const books = useMemo(
-    () => groupBooks(sourceBooks).map((g) => g.book),
+    () => groupBooks(sourceBooks.filter(isReadingBook)).map((g) => g.book),
     [sourceBooks],
   );
   const [tick, setTick] = useState(0);

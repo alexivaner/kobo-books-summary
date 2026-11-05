@@ -158,3 +158,22 @@ it("invalidates cached misses after matcher upgrades and source metadata changes
     ]),
   ).toHaveLength(0);
 });
+
+it("uses available bibliographic metadata for a grouped file even when the latest reader only has its filename", () => {
+  const g = groupBooks([
+    book({ path: "Quiet.epub", isbn: "9780140328721" }),
+    book({
+      id: "b",
+      source: "kobalt",
+      path: "Quiet.epub",
+      title: "Quiet.epub",
+      author: "Unknown author",
+      lastRead: "2026-11-03T00:00:00.000Z",
+      progress: 70,
+    }),
+  ]);
+  expect(g[0].book.title).toBe("The Quiet Atlas");
+  expect(g[0].book.author).toBe("Alex Morgan");
+  expect(g[0].book.isbn).toBe("9780140328721");
+  expect(g[0].book.progress).toBe(70);
+});
