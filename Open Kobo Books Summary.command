@@ -3,7 +3,7 @@
 set -e
 cd -- "${0:A:h}"
 APP_URL='http://127.0.0.1:3000'
-if curl -fsS --max-time 2 "$APP_URL" 2>/dev/null | grep -q 'Kobo Books Summary'; then
+if curl -fsS --max-time 2 "$APP_URL" 2>/dev/null | grep -Eq 'Readmory|Kobo Books Summary'; then
   open "$APP_URL"
   exit 0
 fi
@@ -14,7 +14,7 @@ if ! command -v pnpm >/dev/null 2>&1; then
 fi
 if [[ ! -d node_modules ]]; then pnpm install; fi
 if [[ ! -f out/index.html ]]; then pnpm build; fi
-print 'Opening Kobo Books Summary. Keep this Terminal window open while using the server.'
+print 'Opening Readmory. Keep this Terminal window open while using the server.'
 print 'Use the same browser/profile for your saved library; another browser needs an import or backup restore.'
 ( for attempt in {1..60}; do
     if curl -fsS --max-time 1 "$APP_URL" >/dev/null 2>&1; then open "$APP_URL"; exit; fi

@@ -1,6 +1,8 @@
-# Kobo Books Summary
+# Readmory
 
-A local-first reading knowledge platform for **Kobo, KOReader, and Kobalt**. Keep your books, highlights, personal notes, and reflections in one private browser workspace—without an account or a server database.
+**Your reading, remembered.**
+
+Formerly Kobo Books Summary. A local-first reading knowledge platform for **Kobo, KOReader, and Kobalt**. Keep your books, highlights, personal notes, and reflections in one private browser workspace—without an account or a server database.
 
 ![Synthetic demo library](docs/preview.png)
 

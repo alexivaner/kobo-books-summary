@@ -60,7 +60,8 @@ self.addEventListener("fetch", (event) => {
   }
   if (
     !u.pathname.startsWith(BASE + "/_next/static/") &&
-    !u.pathname.startsWith(BASE + "/vendor/")
+    !u.pathname.startsWith(BASE + "/vendor/") &&
+    !u.pathname.startsWith(BASE + "/brand/")
   )
     return;
   event.respondWith(

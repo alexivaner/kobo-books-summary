@@ -21,11 +21,18 @@ async function walk(dir) {
   }
 }
 await walk(staticRoot);
+const brandRoot = path.join(root, "apps/web/public/brand");
+const brandFiles = (await readdir(brandRoot))
+  .filter((name) => /\.(?:svg|png|webp)$/.test(name))
+  .sort();
+for (const name of brandFiles) assets.push(basePath + "/brand/" + name);
 assets.sort();
-const version = createHash("sha256")
-  .update(JSON.stringify({ basePath, assets }))
-  .digest("hex")
-  .slice(0, 16);
+const digest = createHash("sha256").update(
+  JSON.stringify({ basePath, assets }),
+);
+for (const name of brandFiles)
+  digest.update(await readFile(path.join(brandRoot, name)));
+const version = digest.digest("hex").slice(0, 16);
 const exportRoot = path.join(root, "apps/web/out");
 await writeFile(
   path.join(exportRoot, "offline-assets.json"),

@@ -22,3 +22,5 @@ apps/web/public/sw.js
 apps/web/public/offline-assets.json
 
 /hosting-source/
+
+readmory-library-*.json
