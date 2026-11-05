@@ -33,3 +33,10 @@ export function mergeCandidates(books: Book[]) {
   }
   return [...groups.values()].filter((g) => g.length > 1);
 }
+
+export function personalNoteText(annotation: Annotation) {
+  return (
+    annotation.note.trim() ||
+    (annotation.kind === "note" ? annotation.text.trim() : "")
+  );
+}

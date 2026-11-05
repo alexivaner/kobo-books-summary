@@ -43,10 +43,13 @@ import { analytics, duration } from "../../../packages/analytics";
 import {
   searchAnnotations,
   mergeCandidates,
+  personalNoteText,
 } from "../../../packages/knowledge";
 import { markdown } from "../../../packages/export";
 import { call, initialize, download, readFiles } from "../lib/client";
 import Activity from "./activity";
+import PersonalNotes from "./personal-notes";
+import ReadingRhythm from "./reading-rhythm";
 import { Brand, BrandMark, BrandArtwork } from "./brand";
 import ImportGuide from "./import-guide";
 import type { ImportTask } from "./import-progress";
@@ -64,6 +67,8 @@ const nav = [
   { id: "dashboard", label: "Overview", icon: LayoutDashboard },
   { id: "library", label: "My library", icon: LibraryIcon },
   { id: "knowledge", label: "Knowledge library", icon: Lightbulb },
+  { id: "notes", label: "Personal notes", icon: StickyNote },
+  { id: "rhythm", label: "Reading rhythm", icon: Clock },
   { id: "import", label: "Connect Kobo", icon: Usb },
   { id: "settings", label: "Settings", icon: Settings },
 ] as const;
@@ -502,6 +507,7 @@ export default function Workspace() {
   function annotationCard(a: Annotation) {
     const book = sourceData.books.find((b) => b.id === a.bookId),
       k = knowledgeMap.get(a.id);
+    const ownNote = personalNoteText(a);
     return (
       <article className="annotation" key={a.id}>
         <div className="annotation-top">
@@ -527,13 +533,13 @@ export default function Workspace() {
             <Heart size={17} fill={k?.favorite ? "currentColor" : "none"} />
           </button>
         </div>
-        {a.text && <blockquote>{a.text}</blockquote>}
-        {a.note && (
+        {a.text && a.kind !== "note" && <blockquote>{a.text}</blockquote>}
+        {ownNote && (
           <div className="personal-note">
             <StickyNote size={14} />
             <div>
               <small>YOUR NOTE</small>
-              <p>{a.note}</p>
+              <p>{ownNote}</p>
             </div>
           </div>
         )}
@@ -781,7 +787,11 @@ export default function Workspace() {
                   ? "overview"
                   : page === "knowledge"
                     ? "knowledge library"
-                    : "library"}
+                    : page === "notes"
+                      ? "personal notes"
+                      : page === "rhythm"
+                        ? "reading rhythm"
+                        : "library"}
               </button>
               <section className="book-detail-hero">
                 <Cover book={activeBook} large />
@@ -1101,9 +1111,9 @@ export default function Workspace() {
                       },
                       {
                         label: "Personal notes",
-                        value: stats.notes,
+                        value: stats.notes + data.reflections.length,
                         icon: StickyNote,
-                        detail: "A little of your own perspective",
+                        detail: "Reader notes & your reflections",
                       },
                       {
                         label: "Reading time",
@@ -1115,14 +1125,28 @@ export default function Workspace() {
                             : "Recorded totals · sources may overlap",
                       },
                     ].map(({ label, value, icon: Icon, detail }) => (
-                      <div className="stat-card" key={label}>
+                      <button
+                        className="stat-card"
+                        key={label}
+                        onClick={() =>
+                          navigate(
+                            label === "Personal notes"
+                              ? "notes"
+                              : label === "Reading time"
+                                ? "rhythm"
+                                : label === "Books in your library"
+                                  ? "library"
+                                  : "knowledge",
+                          )
+                        }
+                      >
                         <div>
                           <span>{label}</span>
                           <Icon size={17} />
                         </div>
                         <strong>{value}</strong>
                         <small>{detail}</small>
-                      </div>
+                      </button>
                     ))}
                   </section>
                   <section className="dashboard-columns">
@@ -1168,7 +1192,12 @@ export default function Workspace() {
                         <h2>A reading rhythm</h2>
                         <span className="pill">6 months</span>
                       </div>
-                      <p className="muted">Small moments add up.</p>
+                      <button
+                        className="text-link"
+                        onClick={() => navigate("rhythm")}
+                      >
+                        View reading details <ArrowUpRight size={17} />
+                      </button>
                       <Activity entries={[...stats.activity]} />
                       <div className="activity-caption">
                         <span>
@@ -1383,6 +1412,16 @@ export default function Workspace() {
                     />
                   )}
                 </>
+              )}
+              {page === "notes" && ready && (
+                <PersonalNotes library={sourceData} onOpenBook={openBook} />
+              )}
+              {page === "rhythm" && ready && (
+                <ReadingRhythm
+                  library={sourceData}
+                  onOpenBook={openBook}
+                  onImport={() => navigate("import")}
+                />
               )}
               {page === "knowledge" && (
                 <>
