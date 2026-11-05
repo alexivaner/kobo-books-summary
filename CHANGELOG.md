@@ -2,6 +2,8 @@
 
 ## 0.1.0 — Public beta
 
+- Fixed whole-folder USB cover imports: cached shelf images are processed before EPUBs in bounded batches, instead of exhausting a shared 128 MB allowance. Added cover counts and measured batch progress.
+
 - Dedicated personal notes and reflections view, searchable with reader provenance and passage context.
 - Detailed monthly reading calendar with per-day sessions and reader filters; source totals never invent daily history.
 - Larger typography and responsive controls throughout the workspace.

@@ -59,8 +59,10 @@ The production build generates an offline asset manifest and precaches every app
 1. Connect the Kobo by USB and enable storage mode on its screen.
 2. Open **Connect Kobo** and follow **Connect → Choose files → Review & save**. Choose **My Kobo is connected** after enabling its USB connection. If you already have source files, use the saved-files option in the connection help.
 3. In **Choose files**, give your Kobo a name and reuse it on later imports. Select the mounted KOBOeReader folder, or choose supported source files. The guide includes Kobo/KOReader/Kobalt file locations and hidden-folder instructions for Mac, Windows and Linux.
-4. Review the preview, then choose **Import into my library**. Store records remain separate from your reading shelf.
+4. Review the preview, including the local cover count, then choose **Import into my library**. Store records remain separate from your reading shelf.
 5. Safely eject your Kobo and browse locally. Files on the Kobo are never modified. Use **Settings → Download backup** to keep a portable copy.
+
+Cover artwork is read from the selected folder: Kobo cached images first, then EPUBs in bounded batches. Store-preview artwork does not consume the reading shelf’s cover budget. Selecting only databases does not include image files. Missing artwork can use optional Open Library lookup in Settings.
 
 Supported sources:
 
