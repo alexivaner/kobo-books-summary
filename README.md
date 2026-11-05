@@ -17,7 +17,7 @@ A local-first reading knowledge platform for **Kobo, KOReader, and Kobalt**. Kee
 
 ## Public beta
 
-The source is ready to run locally. Website publication is pending the hosting credential handoff; a live URL will be added after deployment is verified.
+The app supports GitHub Pages through the included build-and-deploy workflow, as well as Cloudflare Pages static hosting. A live URL will be added after deployment is verified.
 
 Public beta: imports and library storage stay in your browser. Optional Open Library lookup is off until enabled. Back up regularly; site data can be cleared. See [PRIVACY.md](PRIVACY.md).
 

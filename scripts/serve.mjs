@@ -2,6 +2,8 @@ import http from "node:http";
 import { readFile, stat } from "node:fs/promises";
 import path from "node:path";
 const root = path.resolve("out");
+const basePath =
+  process.env.NEXT_PUBLIC_BASE_PATH || process.env.E2E_BASE_PATH || "";
 const mime = {
   ".html": "text/html; charset=utf-8",
   ".js": "text/javascript",
@@ -23,9 +25,16 @@ const csp = headers
 http
   .createServer(async (req, res) => {
     try {
-      const p = decodeURIComponent(
+      const pathname = decodeURIComponent(
         new URL(req.url, "http://localhost").pathname,
       );
+      if (
+        basePath &&
+        pathname !== basePath &&
+        !pathname.startsWith(basePath + "/")
+      )
+        throw Error("Outside deployment path");
+      const p = basePath ? pathname.slice(basePath.length) || "/" : pathname;
       let f = path.resolve(root, "." + p);
       if (!f.startsWith(root + path.sep) && f !== root)
         throw Error("Invalid path");
