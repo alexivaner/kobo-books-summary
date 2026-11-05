@@ -15,9 +15,9 @@ A local-first reading knowledge platform for **Kobo, KOReader, and Kobalt**. Kee
 - Export book notes to Markdown/JSON, and back up or restore the complete local library.
 - Responsive light/dark interface, recorded activity calendar, and offline browsing after the production app has loaded.
 
-## Try it online
+## Public beta
 
-[Open Kobo Books Summary](https://kobo-books-summary.ivan522970.chatgpt.site) · [About the project](https://kobo-books-summary.ivan522970.chatgpt.site/welcome/)
+The source is ready to run locally. Website publication is pending the hosting credential handoff; a live URL will be added after deployment is verified.
 
 Public beta: imports and library storage stay in your browser. Optional Open Library lookup is off until enabled. Back up regularly; site data can be cleared. See [PRIVACY.md](PRIVACY.md).
 
