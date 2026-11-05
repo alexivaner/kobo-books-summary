@@ -72,7 +72,8 @@ export default function ReadingRhythm({
   const selectedRecords = days.get(selected) || [];
   const selectedActivity = new Map<string, typeof selectedRecords>();
   for (const r of selectedRecords.filter((r) => !isTimed(r))) {
-    const id = books.get(r.bookId)?.book.id || r.bookId;
+    const record = books.get(r.bookId);
+    const id = `${record?.source || "reader"}|${record?.book.id || r.bookId}`;
     selectedActivity.set(id, [...(selectedActivity.get(id) || []), r]);
   }
   const selectedTime = combinedTime({
@@ -283,14 +284,23 @@ export default function ReadingRhythm({
                 const events = records.filter(
                   (r) => r.evidence === "reader-event",
                 ).length;
+                const annotations = records.filter(
+                  (r) => r.evidence === "annotation",
+                ).length;
+                const source = record ? names[record.source] : "Reader";
                 return (
                   <article className="reading-session" key={id}>
                     <div>
                       <span>
-                        Kobo ·{" "}
-                        {events
-                          ? `${events} reading events`
-                          : "Last-read timestamp"}
+                        {source} ·{" "}
+                        {[
+                          events ? `${events} reader events` : "",
+                          annotations
+                            ? `${annotations} annotation ${annotations === 1 ? "date" : "dates"}`
+                            : "",
+                        ]
+                          .filter(Boolean)
+                          .join(" · ") || "Last-read timestamp"}
                       </span>
                     </div>
                     <button
@@ -302,7 +312,7 @@ export default function ReadingRhythm({
                       <ArrowUpRight size={16} />
                     </button>
                     <p className="muted">
-                      Reading is recorded for this date; its active duration is
+                      Activity is recorded for this date; its active duration is
                       unavailable.
                     </p>
                   </article>
@@ -358,8 +368,8 @@ export default function ReadingRhythm({
             ? "unavailable"
             : `${allTime.minimum ? "at least " : ""}${duration(allTime.seconds)}`}
           . These totals are kept separate from monthly time. Kobo event history
-          and last-read dates can be partial; missing dates do not mean you did
-          not read. Approximate session start times use ≈.
+          and annotation/last-read dates can be partial; missing dates do not
+          mean you did not read. Approximate session start times use ≈.
         </p>
       </section>
       {!valid.length && (

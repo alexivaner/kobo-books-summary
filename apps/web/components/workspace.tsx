@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import {
   BookOpen,
   LayoutDashboard,
+  ChartColumn,
   Library as LibraryIcon,
   Lightbulb,
   Usb,
@@ -50,6 +51,7 @@ import Activity from "./activity";
 import { isTimed } from "../../../packages/analytics/rhythm";
 import PersonalNotes from "./personal-notes";
 import ReadingRhythm from "./reading-rhythm";
+import ReadingStatistics from "./reading-statistics";
 import { Brand, BrandMark, BrandArtwork } from "./brand";
 import ImportGuide from "./import-guide";
 import type { ImportTask } from "./import-progress";
@@ -73,6 +75,7 @@ const nav = [
   { id: "knowledge", label: "Knowledge library", icon: Lightbulb },
   { id: "notes", label: "Personal notes", icon: StickyNote },
   { id: "rhythm", label: "Reading rhythm", icon: Clock },
+  { id: "statistics", label: "Statistics", icon: ChartColumn },
   { id: "import", label: "Connect Kobo", icon: Usb },
   { id: "settings", label: "Settings", icon: Settings },
 ] as const;
@@ -722,7 +725,7 @@ export default function Workspace() {
               onManage={() => navigate("settings")}
             />
           )}
-          {includeStore && (
+          {includeStore && page !== "statistics" && (
             <div className="banner">
               Store records are included in this view and its statistics.{" "}
               <button
@@ -774,9 +777,11 @@ export default function Workspace() {
                     ? "knowledge library"
                     : page === "notes"
                       ? "personal notes"
-                      : page === "rhythm"
-                        ? "reading rhythm"
-                        : "library"}
+                      : page === "statistics"
+                        ? "statistics"
+                        : page === "rhythm"
+                          ? "reading rhythm"
+                          : "library"}
               </button>
               <section className="book-detail-hero">
                 <Cover book={activeBook} large />
@@ -1410,6 +1415,13 @@ export default function Workspace() {
               )}
               {page === "notes" && ready && (
                 <PersonalNotes library={sourceData} onOpenBook={openBook} />
+              )}
+              {page === "statistics" && ready && (
+                <ReadingStatistics
+                  library={sourceData}
+                  onOpenBook={openBook}
+                  onRhythm={() => navigate("rhythm")}
+                />
               )}
               {page === "rhythm" && ready && (
                 <ReadingRhythm

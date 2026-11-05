@@ -3620,3 +3620,305 @@ textarea {
     grid-template-columns: minmax(0, 1fr);
   }
 }
+.statistics-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 18px;
+  margin: 28px 0 32px;
+}
+.statistics-filters label,
+.statistics-ranking label {
+  display: grid;
+  gap: 7px;
+  font-size: 14px;
+  color: var(--muted);
+}
+.statistics-filters select,
+.statistics-ranking select {
+  min-height: 46px;
+  padding: 10px 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--paper);
+  color: var(--ink);
+  font-size: 16px;
+}
+.statistics-evidence {
+  color: var(--muted);
+  font-size: 15px;
+  margin: 0 0 28px;
+  max-width: 85ch;
+}
+.statistics-months {
+  margin: 24px 0;
+}
+.month-bars {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 8px;
+  margin: 28px 0;
+}
+.month-bars button {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 9px;
+  padding: 10px 3px;
+  color: var(--ink);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 8px;
+}
+.month-bars button:hover,
+.month-bars button.selected {
+  border-color: var(--green);
+  background: var(--pale);
+}
+.month-bar-track {
+  height: 110px;
+  width: 70%;
+  display: flex;
+  align-items: end;
+  background: var(--bg);
+  border-radius: 5px;
+  overflow: hidden;
+}
+.month-bar-track > span {
+  width: 100%;
+  background: var(--green);
+  border-radius: 5px 5px 0 0;
+  min-height: 0;
+}
+.month-bar-track > span.date-only {
+  background: var(--brand-sage);
+}
+.month-bars strong,
+.month-bars small {
+  font-size: 14px;
+}
+.month-bars small {
+  color: var(--muted);
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+.statistics-months > p,
+.statistics-ranking > p {
+  font-size: 15px;
+}
+.statistics-years {
+  margin: 24px 0 38px;
+}
+.statistics-years summary {
+  cursor: pointer;
+  font-size: 18px;
+  color: var(--green);
+}
+.year-comparison {
+  display: grid;
+  gap: 0;
+  margin-top: 20px;
+}
+.year-comparison button {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+  align-items: center;
+  text-align: left;
+  padding: 18px 0;
+  background: none;
+  color: var(--ink);
+  border: 0;
+  border-top: 1px solid var(--line);
+  font-size: 16px;
+}
+.year-comparison button strong {
+  font-size: 23px;
+  font-family: Georgia, serif;
+}
+.year-comparison button > span:last-of-type {
+  color: var(--muted);
+  margin-left: auto;
+}
+.statistics-ranking {
+  margin: 38px 0;
+}
+.statistics-book-list {
+  margin-top: 24px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.statistics-book {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 36px 65px minmax(0, 1fr) auto 20px;
+  gap: 18px;
+  padding: 21px;
+  align-items: center;
+  text-align: left;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  background: var(--paper);
+  color: var(--ink);
+}
+.statistics-book:last-child {
+  border-bottom: 0;
+}
+.statistics-book:hover {
+  background: var(--pale);
+}
+.book-rank {
+  font:
+    22px Georgia,
+    serif;
+  color: var(--muted);
+}
+.stats-cover {
+  display: block;
+  width: 65px;
+  height: 90px;
+  overflow: hidden;
+  border-radius: 4px;
+  background: var(--pale);
+}
+.stats-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.stats-cover > span {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 5px;
+  color: var(--green);
+}
+.stats-cover strong {
+  font:
+    12px Georgia,
+    serif;
+  text-align: center;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.statistics-book-title,
+.statistics-book-values {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+.statistics-book-title > strong {
+  font-size: 18px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+.statistics-book-title > span,
+.statistics-book-values > span {
+  font-size: 14px;
+  color: var(--muted);
+}
+.statistics-book-values {
+  text-align: right;
+}
+.statistics-book-values > strong {
+  font-size: 18px;
+}
+.statistics-continue {
+  margin-top: 35px;
+}
+.statistics-continue > div {
+  display: grid;
+  gap: 10px;
+  margin-top: 20px;
+}
+.statistics-continue .text-link {
+  font-size: 16px;
+  text-align: left;
+}
+.statistics-continue .text-link > span {
+  color: var(--muted);
+  white-space: nowrap;
+  margin-left: auto;
+}
+.share-card-preview {
+  display: block;
+  width: 100%;
+  max-width: 390px;
+  height: auto;
+  margin: 24px auto;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+.modal:has(.share-card-preview) {
+  max-width: 650px;
+}
+@media (max-width: 1000px) {
+  .month-bars {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .month-bar-track {
+    height: 80px;
+  }
+}
+@media (max-width: 650px) {
+  .statistics-filters {
+    gap: 14px;
+  }
+  .statistics-filters > label {
+    flex: 1 1 125px;
+  }
+  .statistics-book {
+    grid-template-columns: 24px 50px minmax(0, 1fr);
+    gap: 12px;
+    padding: 17px;
+  }
+  .stats-cover {
+    width: 50px;
+    height: 72px;
+  }
+  .statistics-book-values {
+    grid-column: 3;
+    text-align: left;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+  }
+  .statistics-book > svg {
+    display: none;
+  }
+  .statistics-book-title > strong {
+    font-size: 16px;
+  }
+  .statistics-book-values > strong {
+    font-size: 16px;
+  }
+  .statistics-ranking .section-heading {
+    align-items: start;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+  .statistics-ranking label {
+    width: 100%;
+  }
+  .statistics-ranking select {
+    width: 100%;
+  }
+  .month-bars {
+    gap: 4px;
+  }
+  .month-bars button {
+    padding: 8px 1px;
+  }
+  .statistics-continue .text-link {
+    flex-wrap: wrap;
+  }
+}

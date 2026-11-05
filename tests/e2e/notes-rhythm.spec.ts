@@ -89,7 +89,10 @@ test("reading rhythm exposes recorded days and sessions with reader provenance",
   await expect(
     page.getByRole("heading", { name: "Reading rhythm.", exact: true }),
   ).toBeVisible();
-  const day = page.getByRole("button", { name: / · .* recorded$/ }).first();
+  await page.getByLabel("Reading month").fill("2026-09");
+  const day = page
+    .getByRole("button", { name: /2026-09-21 · .* recorded$/ })
+    .first();
   await expect(day).toBeVisible();
   await day.click();
   const details = page.getByRole("region", { name: "Selected day reading" });
@@ -107,6 +110,7 @@ test("reading rhythm exposes recorded days and sessions with reader provenance",
   await expect(
     page.getByRole("heading", { name: "Reading rhythm.", exact: true }),
   ).toBeVisible();
+  await page.getByLabel("Reading month").fill("2026-09");
   await expect(page.locator(".calendar-days .has-reading")).toHaveCount(1);
   expect(
     await page.evaluate(
@@ -135,5 +139,5 @@ test("native last-read activity does not invent daily durations", async ({
   await expect(page.locator(".calendar-days .has-reading")).toHaveCount(1);
   await expect(
     page.getByRole("region", { name: "Selected day reading" }),
-  ).toContainText("Last-read timestamp");
+  ).toContainText("annotation date");
 });

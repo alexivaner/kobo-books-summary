@@ -14,6 +14,7 @@ Formerly Kobo Books Summary. A local-first reading knowledge platform for **Kobo
 - Preserve source ids, quotation/note separation, source-hidden annotations, historical records, and repeated-import identity.
 - Use local Kobo/EPUB covers first. Optional automatic enrichment looks up the reading library in grouped requests, saves confident covers/metadata, and resumes pending work. **Find cover** remains available for manual review. Both disclose the metadata shared; cached results work offline.
 - Track **ever finished** and recorded completion dates separately from current progress. Label rereading as observed/inferred, preserve known history across imports, and distinguish start counters from reread counts.
+- Explore **Statistics** by year, month and reader, rank books by active days or recorded time, and generate a local PNG share card with covers. Preview and download it, or open your device’s share options. Notes and highlights are excluded from the image.
 - Export book notes to Markdown/JSON, and back up or restore the complete local library.
 - Browse **Personal notes** separately: reader notes, standalone notes, and your own saved reflections, with search and book links.
 - Explore **Reading rhythm** across native Kobo, Kobalt and KOReader: measured sessions, native event dates, last-read evidence, source coverage and conservative combined time. Aggregate book counters stay separate from daily durations. [How reading history is combined](docs/READING_HISTORY.md).
