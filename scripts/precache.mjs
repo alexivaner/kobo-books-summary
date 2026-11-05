@@ -2,6 +2,9 @@ import { readdir, readFile, writeFile, cp, rm } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { createHash } from "node:crypto";
 import path from "node:path";
+const basePath = process.env.NEXT_PUBLIC_BASE_PATH || "";
+if (basePath && !/^\/[a-zA-Z0-9_-]+(?:\/[a-zA-Z0-9_-]+)*$/.test(basePath))
+  throw Error("Invalid deployment base path");
 const root = fileURLToPath(new URL("../", import.meta.url)),
   staticRoot = path.join(root, "apps/web/.next/static"),
   assets = [];
@@ -11,7 +14,8 @@ async function walk(dir) {
     if (e.isDirectory()) await walk(p);
     else if (/\.(js|css|woff2?|ttf|otf|png|svg|ico)$/.test(e.name))
       assets.push(
-        "/_next/static/" +
+        basePath +
+          "/_next/static/" +
           path.relative(staticRoot, p).replaceAll(path.sep, "/"),
       );
   }
@@ -19,7 +23,7 @@ async function walk(dir) {
 await walk(staticRoot);
 assets.sort();
 const version = createHash("sha256")
-  .update(JSON.stringify(assets))
+  .update(JSON.stringify({ basePath, assets }))
   .digest("hex")
   .slice(0, 16);
 const exportRoot = path.join(root, "apps/web/out");
@@ -33,8 +37,11 @@ const template = await readFile(
 );
 await writeFile(
   path.join(exportRoot, "sw.js"),
-  template.replaceAll("__BUILD_HASH__", version),
+  template
+    .replaceAll("__BUILD_HASH__", version)
+    .replaceAll("__BASE_PATH__", basePath),
 );
+await writeFile(path.join(exportRoot, ".nojekyll"), "");
 await rm(path.join(root, "out"), { recursive: true, force: true });
 await cp(exportRoot, path.join(root, "out"), { recursive: true });
 console.log(`Prepared offline shell with ${assets.length} production assets.`);

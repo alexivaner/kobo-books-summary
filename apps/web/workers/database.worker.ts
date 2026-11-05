@@ -1,5 +1,6 @@
 /// <reference lib="webworker" />
 import initSqlJs from "sql.js";
+import { appPath } from "../lib/paths";
 import { Store } from "../../../packages/storage";
 import {
   discover,
@@ -95,7 +96,9 @@ async function initialize() {
     bytes = await idbRead();
   }
   if (opfs && !bytes) bytes = await idbRead();
-  const SQL = await initSqlJs({ locateFile: () => "/vendor/sql-wasm.wasm" });
+  const SQL = await initSqlJs({
+    locateFile: () => appPath("/vendor/sql-wasm.wasm"),
+  });
   store = new Store(SQL, bytes);
   if (!bytes) await save(store.bytes());
   return store.library(storage);

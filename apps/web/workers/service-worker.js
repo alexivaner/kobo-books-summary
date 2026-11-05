@@ -1,8 +1,9 @@
 /* Only same-origin static shell assets enter this cache. Imported files never do. */
+const BASE = "__BASE_PATH__";
 const CACHE = "kobo-shell-__BUILD_HASH__";
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    fetch("/offline-assets.json", { cache: "no-store" })
+    fetch(BASE + "/offline-assets.json", { cache: "no-store" })
       .then((r) => {
         if (!r.ok) throw Error("Offline asset manifest unavailable");
         return r.json();
@@ -11,7 +12,7 @@ self.addEventListener("install", (event) => {
         caches
           .open(CACHE)
           .then((c) =>
-            c.addAll(["/", "/welcome/", "/vendor/sql-wasm.wasm", ...manifest.assets]),
+            c.addAll([BASE + "/", BASE + "/welcome/", BASE + "/vendor/sql-wasm.wasm", ...manifest.assets]),
           ),
       ),
   );
@@ -58,8 +59,8 @@ self.addEventListener("fetch", (event) => {
     return;
   }
   if (
-    !u.pathname.startsWith("/_next/static/") &&
-    !u.pathname.startsWith("/vendor/")
+    !u.pathname.startsWith(BASE + "/_next/static/") &&
+    !u.pathname.startsWith(BASE + "/vendor/")
   )
     return;
   event.respondWith(
@@ -87,7 +88,7 @@ self.addEventListener("message", (event) => {
       const u = new URL(url, self.location.origin);
       return (
         u.origin === self.location.origin &&
-        u.pathname.startsWith("/_next/static/")
+        u.pathname.startsWith(BASE + "/_next/static/")
       );
     } catch {
       return false;
