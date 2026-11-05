@@ -40,8 +40,7 @@ export default function ReaderSources({
         </span>
       </div>
       <p className="source-explainer">
-        Your place in each reader, kept together. The shelf shows the latest
-        recorded progress.
+        Your shelf shows the latest recorded progress.
       </p>
       <div className="reader-source-grid">
         {members.map((b) => {

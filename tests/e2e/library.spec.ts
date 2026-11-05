@@ -119,7 +119,7 @@ test("mobile layout, navigation and dark theme", async ({ page }) => {
     .first()
     .click();
   await expect(
-    page.getByRole("heading", { name: "Connect your Kobo." }),
+    page.getByRole("heading", { name: "Import your library." }),
   ).toBeVisible();
   expect(
     await page.evaluate(
