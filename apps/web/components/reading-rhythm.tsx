@@ -10,9 +10,16 @@ import {
 } from "lucide-react";
 import type { Library } from "../../../packages/core";
 import { duration } from "../../../packages/analytics";
-import { dayKey, recordedSessions } from "../../../packages/analytics/rhythm";
+import {
+  dayKey,
+  recordedSessions,
+  isTimed,
+  combinedTime,
+  bookTime,
+} from "../../../packages/analytics/rhythm";
 import { groupBooks } from "../../../packages/core/grouping";
 const calendarTime = (seconds: number) => {
+  if (seconds > 0 && seconds < 60) return "<1m";
   const minutes = Math.round(seconds / 60);
   return minutes < 60
     ? `${minutes}m`
@@ -51,7 +58,10 @@ export default function ReadingRhythm({
     const key = dayKey(s.start)!;
     days.set(key, [...(days.get(key) || []), s]);
   }
-  const seconds = inMonth.reduce((n, s) => n + s.duration, 0),
+  const total = combinedTime({ books: library.books, sessions: inMonth });
+  const timed = inMonth.filter(isTimed);
+  const allTime = bookTime(library);
+  const seconds = total.seconds,
     countBooks = new Set(
       inMonth.map((s) => books.get(s.bookId)?.book.id || s.bookId),
     ).size;
@@ -59,7 +69,18 @@ export default function ReadingRhythm({
   const first = new Date(y, m - 1, 1),
     offset = (first.getDay() + 6) % 7,
     count = new Date(y, m, 0).getDate();
-  const selectedSessions = (days.get(selected) || [])
+  const selectedRecords = days.get(selected) || [];
+  const selectedActivity = new Map<string, typeof selectedRecords>();
+  for (const r of selectedRecords.filter((r) => !isTimed(r))) {
+    const id = books.get(r.bookId)?.book.id || r.bookId;
+    selectedActivity.set(id, [...(selectedActivity.get(id) || []), r]);
+  }
+  const selectedTime = combinedTime({
+    books: library.books,
+    sessions: selectedRecords,
+  });
+  const selectedSessions = selectedRecords
+    .filter(isTimed)
     .slice()
     .sort((a, b) => a.start.localeCompare(b.start));
   const selectMonth = (value: string) => {
@@ -140,10 +161,12 @@ export default function ReadingRhythm({
         {[
           [
             "Recorded time",
-            inMonth.length ? duration(seconds) : "Not recorded",
+            timed.length
+              ? `${total.overlaps ? "At least " : ""}${duration(seconds)}`
+              : "Not recorded",
           ],
           ["Active days", days.size],
-          ["Sessions", inMonth.length],
+          ["Timed sessions", timed.length],
           ["Books", countBooks],
         ].map(([label, value]) => (
           <div className="panel" key={label}>
@@ -154,8 +177,8 @@ export default function ReadingRhythm({
       </section>
       {multiple && (
         <p className="rhythm-evidence">
-          Reader records can overlap. Filter by reader to inspect separate
-          totals.
+          Overlapping records for the same book use the largest recorded
+          duration. Filter by reader to inspect original records.
         </p>
       )}
       <div className="rhythm-layout">
@@ -181,18 +204,21 @@ export default function ReadingRhythm({
             {Array.from({ length: count }, (_, i) => {
               const day = month + "-" + String(i + 1).padStart(2, "0"),
                 records = days.get(day) || [],
-                total = records.reduce((n, s) => n + s.duration, 0);
+                total = combinedTime({
+                  books: library.books,
+                  sessions: records,
+                }).seconds;
               return (
                 <button
                   key={day}
-                  aria-label={`${day} · ${records.length ? duration(total) + " recorded" : "No recorded sessions"}`}
+                  aria-label={`${day} · ${records.length ? (total > 0 ? duration(total) + " recorded" : "Reading activity recorded") : "No recorded sessions"}`}
                   aria-pressed={selected === day}
                   className={`${records.length ? "has-reading" : ""} ${selected === day ? "selected" : ""}`}
                   onClick={() => setSelected(day)}
                 >
                   <span>{i + 1}</span>
                   {records.length ? (
-                    <small>{calendarTime(total)}</small>
+                    <small>{total > 0 ? calendarTime(total) : "Read"}</small>
                   ) : (
                     <span className="calendar-no-record" aria-hidden="true">
                       ·
@@ -203,8 +229,8 @@ export default function ReadingRhythm({
             })}
           </div>
           <p className="calendar-caption">
-            Choose a day to see its sessions. Dates use this browser’s time
-            zone.
+            Read marks dated activity without a measured duration. Dates use
+            this browser’s time zone.
           </p>
         </section>
         <section className="panel rhythm-day" aria-label="Selected day reading">
@@ -217,12 +243,12 @@ export default function ReadingRhythm({
             </h2>
             <Clock size={20} />
           </div>
-          {selectedSessions.length ? (
+          {selectedRecords.length ? (
             <>
               <p className="day-total">
-                {duration(selectedSessions.reduce((n, s) => n + s.duration, 0))}{" "}
-                recorded · {selectedSessions.length}{" "}
-                {selectedSessions.length === 1 ? "session" : "sessions"}
+                {selectedSessions.length
+                  ? `${selectedTime.overlaps ? "At least " : ""}${duration(selectedTime.seconds)} recorded · ${selectedSessions.length} ${selectedSessions.length === 1 ? "session" : "sessions"}`
+                  : "Reading activity recorded · duration unavailable"}
               </p>
               <div className="reading-session-list">
                 {selectedSessions.map((s) => {
@@ -232,6 +258,7 @@ export default function ReadingRhythm({
                       <div>
                         <span>{record ? names[record.source] : "Reader"}</span>
                         <time>
+                          {s.startEstimated ? "≈ " : ""}
                           {new Date(s.start).toLocaleTimeString(undefined, {
                             hour: "numeric",
                             minute: "2-digit",
@@ -251,6 +278,36 @@ export default function ReadingRhythm({
                   );
                 })}
               </div>
+              {[...selectedActivity].map(([id, records]) => {
+                const record = books.get(records[0].bookId);
+                const events = records.filter(
+                  (r) => r.evidence === "reader-event",
+                ).length;
+                return (
+                  <article className="reading-session" key={id}>
+                    <div>
+                      <span>
+                        Kobo ·{" "}
+                        {events
+                          ? `${events} reading events`
+                          : "Last-read timestamp"}
+                      </span>
+                    </div>
+                    <button
+                      className="text-link"
+                      onClick={() => onOpenBook(records[0].bookId)}
+                    >
+                      <BookOpen size={17} />
+                      {record?.book.title || "Open book"}
+                      <ArrowUpRight size={16} />
+                    </button>
+                    <p className="muted">
+                      Reading is recorded for this date; its active duration is
+                      unavailable.
+                    </p>
+                  </article>
+                );
+              })}
             </>
           ) : (
             <p className="rhythm-no-record">
@@ -260,13 +317,58 @@ export default function ReadingRhythm({
           )}
         </section>
       </div>
+      <section
+        className="panel rhythm-coverage"
+        aria-label="Reader history coverage"
+      >
+        <div className="section-heading">
+          <h2>History from every reader</h2>
+        </div>
+        <div className="reader-history-grid">
+          {Object.entries(names).map(([id, name]) => {
+            const sourceBooks = library.books.filter((b) => b.source === id);
+            const ids = new Set(sourceBooks.map((b) => b.id));
+            const records = valid.filter((r) => ids.has(r.bookId));
+            const dates = records.map((r) => dayKey(r.start)!).sort();
+            const totals = bookTime({ books: sourceBooks, sessions: records });
+            return (
+              <div key={id}>
+                <h3>{name}</h3>
+                <p>
+                  {dates.length
+                    ? `${dates[0]} → ${dates.at(-1)}`
+                    : "No dated activity imported"}
+                </p>
+                <p>
+                  {records.filter(isTimed).length} timed sessions ·{" "}
+                  {new Set(dates).size} active days
+                </p>
+                <strong>
+                  {totals.seconds === null
+                    ? "Book time unavailable"
+                    : `${duration(totals.seconds)} in book totals`}
+                </strong>
+              </div>
+            );
+          })}
+        </div>
+        <p className="rhythm-evidence">
+          All-time book totals:{" "}
+          {allTime.seconds === null
+            ? "unavailable"
+            : `${allTime.minimum ? "at least " : ""}${duration(allTime.seconds)}`}
+          . These totals are kept separate from monthly time. Kobo event history
+          and last-read dates can be partial; missing dates do not mean you did
+          not read. Approximate session start times use ≈.
+        </p>
+      </section>
       {!valid.length && (
         <section className="panel rhythm-help">
           <h2>No dated sessions yet</h2>
           <p>
-            Kobo book totals do not provide a day-by-day history. Import
-            KOReader statistics or Kobalt reading sessions to fill this
-            calendar. Your book totals remain available in Overview.
+            Import your Kobo folder to combine native Kobo activity, KOReader
+            statistics and Kobalt sessions. Book totals without dated evidence
+            cannot fill a daily calendar.
           </p>
           <button className="secondary" onClick={onImport}>
             Import reading history

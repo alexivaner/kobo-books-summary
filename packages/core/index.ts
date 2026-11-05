@@ -49,6 +49,10 @@ export const BookSchema = z.object({
   path: z.string().optional(),
   isbn: z.string().optional(),
   imageId: z.string().optional(),
+  koreaderPartialMd5: z
+    .string()
+    .regex(/^[a-f0-9]{32}$/)
+    .optional(),
   metadataRecovered: z.boolean().optional(),
   lastStartedAt: z.string().nullable().optional(),
   sourceStartCount: z.number().int().nonnegative().optional(),
@@ -112,6 +116,9 @@ export const SessionSchema = z.object({
   duration: z.number().nonnegative(),
   kind: z.literal("recorded"),
   page: z.number().optional(),
+  end: z.string().datetime().optional(),
+  evidence: z.enum(["session", "reader-event", "last-read"]).optional(),
+  startEstimated: z.boolean().optional(),
 });
 export type Session = z.infer<typeof SessionSchema>;
 export const SnapshotSchema = z.object({

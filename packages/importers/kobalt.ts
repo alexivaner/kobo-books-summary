@@ -103,7 +103,7 @@ export function importKobalt(db: Database, deviceId: string): Preview {
       start < 0 ||
       observed < start ||
       ms < 0 ||
-      ms > observed - start
+      ms > observed - start + 1000
     ) {
       p.diagnostics.push("Skipped Kobalt session with invalid timing.");
       continue;
@@ -133,6 +133,7 @@ export function importKobalt(db: Database, deviceId: string): Preview {
         bookId: b.id,
         start: iso(start / 1000)!,
         duration: ms / 1000,
+        end: new Date(Math.max(observed, start + ms)).toISOString(),
         kind: "recorded",
       });
   }

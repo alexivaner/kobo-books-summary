@@ -110,6 +110,14 @@ export class Store {
             : {
                 ...b,
                 groupOverride: old?.groupOverride,
+                duration:
+                  b.duration === null
+                    ? (old?.duration ?? null)
+                    : Math.max(b.duration, old?.duration ?? 0),
+                durationKind:
+                  b.duration === null && old?.duration != null
+                    ? old.durationKind
+                    : b.durationKind,
                 enrichment:
                   old && lookupQueryKey(old) === lookupQueryKey(b)
                     ? old.enrichment

@@ -2,6 +2,8 @@
 
 ## 0.1.0 — Public beta
 
+- Unified native Kobo event history, measured analytics sessions, Kobalt and KOReader activity. Added reader coverage, evidence labels, conservative overlap handling, second-level durations, checksum-based KOReader linking and tolerance for sub-second Kobalt clock drift.
+
 - Fixed whole-folder USB cover imports: cached shelf images are processed before EPUBs in bounded batches, instead of exhausting a shared 128 MB allowance. Added cover counts and measured batch progress.
 
 - Dedicated personal notes and reflections view, searchable with reader provenance and passage context.

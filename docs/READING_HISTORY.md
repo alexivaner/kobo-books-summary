@@ -1,0 +1,36 @@
+# Combining reading history
+
+Readmory keeps Kobo, Kobalt and KOReader source records and shows them together in Reading rhythm. Grouped books preserve their source identities, notes and sessions. Source filters show each reader independently.
+
+| Evidence | Imported from | Calendar behavior |
+| --- | --- | --- |
+| Native Kobo dated events | `Event.ExtraData` timestamp arrays, decoded from Qt binary maps | Reading activity, with no invented active duration |
+| Native Kobo last-read date | `content.DateLastRead` | Last-read evidence, with unknown daily duration |
+| Native Kobo measured sessions | `AnalyticsEvents.LeaveContent`, `Metrics.SecondsRead` | Recorded active time; start derived from end minus measured time and marked approximate |
+| Native Kobo book counters | `TimeSpentReading`, `ExtraDataReadingSeconds` | Maximum known counter per book, kept out of daily time allocation |
+| Kobalt sessions | `reading_sessions.started`, `observed`, `active_ms` | Recorded active duration and observed window; up to 1,000 ms of counter drift is accepted |
+| KOReader intervals | `page_stat_data`, or legacy `page_stat` | Recorded page intervals, with second-level durations |
+
+`Read` in the calendar means dated activity exists but its duration is unknown. Nine seconds stays nine seconds, rather than being rounded to zero minutes. Dates use the importing browser's time zone; timed sessions are assigned to their start date. Native timestamps without an explicit zone are interpreted as UTC. Unknown intervals are never filled with reading minutes.
+
+## Matching and combining
+
+Matching uses existing verified file paths/ISBNs or reversible manual grouping. KOReader statistics have a checksum identity; when that checksum matches sidecars with one unique same-device path, Readmory links the path while retaining all original ids. Title similarity alone does not merge unrelated books.
+
+Duplicate session ids are counted once. Overlapping windows for the same matched book form clusters; each cluster contributes its largest recorded active duration. Separate windows add normally. This is a conservative lower bound, not a claim to know where active seconds fall within an idle-containing window. Original sessions remain visible, including their source and duration.
+
+For all-time book totals, Readmory takes the largest known source counter or conservative dated-session total per matched book. It does not add an undated Kobo total to Kobalt/KOReader time that could already be represented in it. Multiple-reader/overlap results are labeled **At least**. The reader coverage panel exposes original source totals and available date ranges.
+
+## Retention and limits
+
+Reimports preserve source ids, dated records and known counters. A sparse later import does not erase an earlier known total. Repeated database snapshots are deduplicated. Backups include the optional evidence fields and remain compatible with schema-v1 exports.
+
+Native analytics can be pruned during reader synchronization. Importing regularly preserves records already captured by Readmory, but cannot reconstruct unrecorded or deleted sessions. Native binary events and last-read dates are partial evidence, not a complete daily log. A firmware-reset diagnosis requires comparison with a pre-update database.
+
+Store previews remain outside the default reading shelf and history; the existing store-record toggle includes them for inspection. Device files are read only. Readmory does not install database triggers, modify the Kobo, or upload private reading records.
+
+## Verification and format references
+
+Synthetic tests cover binary TEXT decoding, malformed payloads, copied-counter deduplication, measured native sessions, checksum linking, overlap handling, repeated imports, backup restoration, clock drift, mobile views and offline storage. Private connected-device validation stays outside the repository.
+
+Primary implementation references: [KOReader statistics](https://github.com/koreader/koreader/blob/master/plugins/statistics.koplugin/main.lua), [Kobo analytics session fields](https://github.com/mfdaves/kobo-db-tools/blob/master/src/parser.rs), and [Kobo analytics retention and SecondsRead](https://github.com/sanderboom/kobo-sync#how-reading-time-is-calculated). The Qt subset decoder is an independent implementation, checked against synthetic fixtures and the connected device; unsupported variant types produce diagnostics rather than guessed values.
