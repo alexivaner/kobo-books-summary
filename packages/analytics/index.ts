@@ -1,14 +1,14 @@
 import type { Library } from "../core";
+import { readingDays } from "./rhythm";
+import { personalNoteText } from "../knowledge";
 export function analytics(library: Library) {
   const active = library.annotations.filter((a) => !a.sourceDeleted);
   const durations = library.books
     .map((b) => b.duration)
     .filter((d): d is number => d !== null);
-  const activity = new Map<string, number>();
-  for (const s of library.sessions) {
-    const day = s.start.slice(0, 10);
-    activity.set(day, (activity.get(day) || 0) + s.duration);
-  }
+  const activity = new Map(
+    [...readingDays(library)].map(([day, value]) => [day, value.seconds]),
+  );
   return {
     total: library.books.length,
     everFinished: library.books.filter(
@@ -21,8 +21,10 @@ export function analytics(library: Library) {
     ).length,
     finished: library.books.filter((b) => b.status === "finished").length,
     reading: library.books.filter((b) => b.status === "reading").length,
-    highlights: active.filter((a) => a.text && a.kind !== "bookmark").length,
-    notes: active.filter((a) => a.note).length,
+    highlights: active.filter(
+      (a) => a.text && a.kind !== "bookmark" && a.kind !== "note",
+    ).length,
+    notes: active.filter((a) => !!personalNoteText(a)).length,
     duration: durations.length ? durations.reduce((a, b) => a + b, 0) : null,
     activity,
   };
