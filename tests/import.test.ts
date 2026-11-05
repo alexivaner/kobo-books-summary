@@ -241,7 +241,8 @@ describe("transactional local library", () => {
     const l = store.library("test");
     expect(searchAnnotations(l.annotations, l.books, "自己的")).toHaveLength(1);
     expect(analytics(l).notes).toBe(1);
-    expect(analytics(l).activity.size).toBe(0);
+    expect(analytics(l).activity.size).toBe(1);
+    expect([...analytics(l).activity.values()]).toEqual([0]);
     expect(analytics(l).duration).toBe(3600);
   });
   it("rejects future schema versions", () => {

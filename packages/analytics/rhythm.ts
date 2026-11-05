@@ -1,4 +1,4 @@
-import type { Library, Session } from "../core";
+import { type Library, type Session, stableId } from "../core";
 import { groupBooks } from "../core/grouping";
 export function dayKey(value: string): string | null {
   const d = new Date(value);
@@ -11,26 +11,41 @@ export function dayKey(value: string): string | null {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 export const isTimed = (s: Session) =>
-  !["reader-event", "last-read"].includes(s.evidence || "") && s.duration > 0;
+  !["reader-event", "last-read", "annotation"].includes(s.evidence || "") &&
+  s.duration > 0;
 export function recordedSessions(
-  library: Pick<Library, "sessions">,
+  library: Pick<Library, "sessions"> & Partial<Pick<Library, "annotations">>,
 ): Session[] {
+  const annotationDates: Session[] = (library.annotations || [])
+    .filter((a) => a.created && dayKey(a.created))
+    .map((a) => ({
+      id: stableId(a.bookId, "annotation-created", a.id, a.created!),
+      bookId: a.bookId,
+      start: a.created!,
+      duration: 0,
+      kind: "recorded",
+      evidence: "annotation",
+    }));
   return [
     ...new Map(
-      library.sessions
+      [...library.sessions, ...annotationDates]
         .filter(
           (s) =>
             !!dayKey(s.start) &&
             Number.isFinite(s.duration) &&
             s.duration >= 0 &&
             (isTimed(s) ||
-              ["reader-event", "last-read"].includes(s.evidence || "")),
+              ["reader-event", "last-read", "annotation"].includes(
+                s.evidence || "",
+              )),
         )
         .map((s) => [s.id, s]),
     ).values(),
   ];
 }
-export function readingDays(library: Pick<Library, "sessions">) {
+export function readingDays(
+  library: Pick<Library, "sessions"> & Partial<Pick<Library, "annotations">>,
+) {
   const days = new Map<string, { seconds: number; sessions: Session[] }>();
   for (const s of recordedSessions(library)) {
     const key = dayKey(s.start)!,

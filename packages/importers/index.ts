@@ -213,8 +213,8 @@ export function importKobo(db: Database, deviceId: string): Preview {
       ]
         .filter(Boolean)
         .join(" · "),
-      created: iso(r.DateCreated),
-      modified: iso(r.DateModified),
+      created: koboDate(r.DateCreated),
+      modified: koboDate(r.DateModified),
       sourceDeleted: truth(r.Hidden),
     });
   }

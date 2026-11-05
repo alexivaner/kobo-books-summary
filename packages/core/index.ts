@@ -117,7 +117,9 @@ export const SessionSchema = z.object({
   kind: z.literal("recorded"),
   page: z.number().optional(),
   end: z.string().datetime().optional(),
-  evidence: z.enum(["session", "reader-event", "last-read"]).optional(),
+  evidence: z
+    .enum(["session", "reader-event", "last-read", "annotation"])
+    .optional(),
   startEstimated: z.boolean().optional(),
 });
 export type Session = z.infer<typeof SessionSchema>;

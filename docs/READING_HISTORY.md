@@ -5,13 +5,14 @@ Readmory keeps Kobo, Kobalt and KOReader source records and shows them together 
 | Evidence | Imported from | Calendar behavior |
 | --- | --- | --- |
 | Native Kobo dated events | `Event.ExtraData` timestamp arrays, decoded from Qt binary maps | Reading activity, with no invented active duration |
+| Dated annotations/bookmarks | Imported creation timestamps across readers | Annotation-date activity, with no invented duration |
 | Native Kobo last-read date | `content.DateLastRead` | Last-read evidence, with unknown daily duration |
 | Native Kobo measured sessions | `AnalyticsEvents.LeaveContent`, `Metrics.SecondsRead` | Recorded active time; start derived from end minus measured time and marked approximate |
 | Native Kobo book counters | `TimeSpentReading`, `ExtraDataReadingSeconds` | Maximum known counter per book, kept out of daily time allocation |
 | Kobalt sessions | `reading_sessions.started`, `observed`, `active_ms` | Recorded active duration and observed window; up to 1,000 ms of counter drift is accepted |
 | KOReader intervals | `page_stat_data`, or legacy `page_stat` | Recorded page intervals, with second-level durations |
 
-`Read` in the calendar means dated activity exists but its duration is unknown. Nine seconds stays nine seconds, rather than being rounded to zero minutes. Dates use the importing browser's time zone; timed sessions are assigned to their start date. Native timestamps without an explicit zone are interpreted as UTC. Unknown intervals are never filled with reading minutes.
+`Read` in the calendar means dated activity exists but its duration is unknown. Annotation creation dates also contribute to active days and are labeled separately from reader events; note and highlight text is never used in time calculations. This preserves earlier reading evidence even when older session logs are absent. Nine seconds stays nine seconds, rather than being rounded to zero minutes. Dates use the importing browser's time zone; timed sessions are assigned to their start date. Native timestamps without an explicit zone are interpreted as UTC. Unknown intervals are never filled with reading minutes.
 
 ## Matching and combining
 
@@ -34,3 +35,9 @@ Store previews remain outside the default reading shelf and history; the existin
 Synthetic tests cover binary TEXT decoding, malformed payloads, copied-counter deduplication, measured native sessions, checksum linking, overlap handling, repeated imports, backup restoration, clock drift, mobile views and offline storage. Private connected-device validation stays outside the repository.
 
 Primary implementation references: [KOReader statistics](https://github.com/koreader/koreader/blob/master/plugins/statistics.koplugin/main.lua), [Kobo analytics session fields](https://github.com/mfdaves/kobo-db-tools/blob/master/src/parser.rs), and [Kobo analytics retention and SecondsRead](https://github.com/sanderboom/kobo-sync#how-reading-time-is-calculated). The Qt subset decoder is an independent implementation, checked against synthetic fixtures and the connected device; unsupported variant types produce diagnostics rather than guessed values.
+
+## Statistics and share cards
+
+Statistics offers all-time, year, month and reader filters. Annual/monthly time uses only dated timed sessions. All-time time can include undated book counters. Active days include reader-event, last-read and annotation dates, deduplicated per date. Ranking by active days measures recurrence rather than the number of page turns or annotations; ranking by time uses the same conservative duration rules. Dated completions belong to their recorded period, while undated finished states count only in all-time finishes.
+
+Share cards are generated locally on a 1080 × 1350 canvas using cached covers and selected statistics. They show the period, reader scope, recorded time, activity-day/book/finish counts and up to three top books. Users can omit covers and titles. Only those displayed fields are included; quotes, notes and reflections never enter the image. Download works offline; native sharing is invoked only by an explicit click, with PNG download as the unsupported-browser fallback. Nothing is published automatically.
