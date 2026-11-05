@@ -7,6 +7,10 @@ import path from "node:path";
 import { discover } from "../packages/importers";
 import { readingLibrary } from "../packages/core";
 import { Store } from "../packages/storage";
+import {
+  reconstructKoboSessions,
+  koboSessionDays,
+} from "../packages/analytics/kobo-sessions";
 it.skipIf(!process.env.KOBO_PRIVATE_FIXTURES)(
   "imports real device snapshots without exposing annotation content",
   async () => {
@@ -45,6 +49,7 @@ it.skipIf(!process.env.KOBO_PRIVATE_FIXTURES)(
     const next = new Store(SQL, store.bytes()).library("test");
     expect(next.books.length).toBe(first.books.length);
     expect(next.annotations.length).toBe(first.annotations.length);
+    const reconstructed = reconstructKoboSessions(next);
     await writeFile(
       "/private/tmp/kobo-validation-summary.json",
       JSON.stringify({
@@ -56,6 +61,25 @@ it.skipIf(!process.env.KOBO_PRIVATE_FIXTURES)(
           .length,
         annotations: next.annotations.length,
         recordedIntervals: next.sessions.length,
+        reconstructedKoboSessions: reconstructed.sessions.length,
+        reconstructedKoboElapsedSeconds: reconstructed.sessions.reduce(
+          (n, s) => n + s.seconds,
+          0,
+        ),
+        reconstructedKoboByMonth: Object.fromEntries(
+          [
+            ...new Set(
+              koboSessionDays(reconstructed.sessions).map((s) =>
+                s.day.slice(0, 7),
+              ),
+            ),
+          ].map((month) => [
+            month,
+            koboSessionDays(reconstructed.sessions)
+              .filter((s) => s.day.startsWith(month))
+              .reduce((n, s) => n + s.seconds, 0),
+          ]),
+        ),
         sources: preview.sources,
         diagnostics: preview.diagnostics.length,
       }),

@@ -44,4 +44,10 @@ When active books have lifetime counters exceeding their imported dated sessions
 
 Year/month summaries and share cards use an "Incomplete" headline when there is some timed data alongside activity without timing coverage. The imported session duration remains a secondary detail, never a complete period total. Reading rhythm also shows all-time totals for the books active in the selected month in a separate card. Coverage checks use grouped book/day pairs and unallocated lifetime counters; they do not certify that an import is exhaustive.
 
+## Reconstructed Kobo session estimates
+
+Statistics and Reading rhythm offer a separate Kobo session estimate section. A fresh import preserves the original reader activity IDs and adds event-type metadata. Derived pairs use reverse-engineered read-start (1020) and read-end (1021) events; see [kobo-readstat's event definitions](https://github.com/timchurchard/kobo-readstat/blob/main/pkg/kobo-db.go). Missing, repeated, simultaneous, overlapping same-device and over-four-hour intervals are rejected. These limits are conservative product choices, not Kobo guarantees. Dates split at local midnight, accounting for daylight saving boundaries.
+
+The resulting durations are **elapsed session estimates**, which may contain idle time. They never replace measured active seconds, inflate lifetime counters, allocate aggregate hours, or enter measured share-card totals. Expanding the section shows dates, clock intervals, book links and approximate elapsed duration. Older imports need reimporting to retain the necessary event types; existing books, annotations, source identifiers and backups are preserved.
+
 Share cards are generated locally on a 1080 × 1350 canvas using cached covers and selected statistics. They show the period, reader scope, recorded time, activity-day/book/finish counts and up to three top books. Users can omit covers and titles. Only those displayed fields are included; quotes, notes and reflections never enter the image. Download works offline; native sharing is invoked only by an explicit click, with PNG download as the unsupported-browser fallback. Nothing is published automatically.

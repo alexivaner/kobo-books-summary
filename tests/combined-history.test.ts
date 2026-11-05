@@ -98,6 +98,9 @@ it("recovers native historical activity and measured analytics without assigning
   const db = native(),
     p = importKobo(db, "test");
   expect(p.books[0].duration).toBe(500); // max of copied native counters, not 500+500+100
+  expect(
+    p.sessions.find((s) => s.evidence === "reader-event")?.koboEventTypes,
+  ).toEqual([3, 46]);
   expect(p.sessions.filter((s) => s.evidence === "reader-event")).toHaveLength(
     2,
   );
