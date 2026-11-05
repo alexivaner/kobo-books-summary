@@ -3,12 +3,11 @@ import { useState, useRef, useEffect, type ReactNode } from "react";
 import {
   ArrowLeft,
   ArrowRight,
-  BookOpen,
   Check,
   FolderOpen,
   ShieldCheck,
-  Usb,
 } from "lucide-react";
+import ImportProgress, { type ImportTask } from "./import-progress";
 const files = {
   kobo: {
     name: "Kobo",
@@ -29,14 +28,16 @@ const files = {
 export default function ImportGuide({
   children,
   hasPreview,
+  task,
 }: {
   children: ReactNode;
   hasPreview: boolean;
+  task: ImportTask | null;
 }) {
   const [step, setStep] = useState(0),
     [os, setOs] = useState("mac"),
     [reader, setReader] = useState<keyof typeof files>("kobo");
-  const active = hasPreview ? 2 : step;
+  const active = hasPreview ? 2 : task ? 1 : step;
   const heading = useRef<HTMLHeadingElement>(null);
   const mounted = useRef(false);
   useEffect(() => {
@@ -63,43 +64,26 @@ export default function ImportGuide({
           </li>
         ))}
       </ol>
-      {active === 0 ? (
+      {task ? (
+        <ImportProgress task={task} />
+      ) : active === 0 ? (
         <>
-          <div className="guide-illustration" aria-hidden="true">
-            <div className="guide-reader">
-              <BookOpen size={36} />
-              <span>YOUR LIBRARY</span>
-            </div>
-            <div className="guide-cable" />
-            <Usb size={28} />
-          </div>
-          <span className="eyebrow">STEP 1 · A QUICK CONNECTION</span>
           <h2 ref={heading} tabIndex={-1}>
-            Bring your Kobo to your computer.
+            Connect your Kobo.
           </h2>
-          <p className="guide-intro">
-            Keep a USB cable handy. Your books and notes will stay on your
-            Kobo—we only read a copy.
-          </p>
           <ol className="connection-checklist">
             <li>
               <span>1</span>
               <div>
                 <strong>Plug in your Kobo</strong>
-                <p>
-                  Use a USB cable that transfers data. A charging-only cable
-                  won’t show your files.
-                </p>
+                <p>Use a data-capable USB cable.</p>
               </div>
             </li>
             <li>
               <span>2</span>
               <div>
                 <strong>Tap Connect on your Kobo</strong>
-                <p>
-                  Wait for the “Connected and charging” screen, or a similar USB
-                  connection message.
-                </p>
+                <p>Wait for its USB connection screen.</p>
               </div>
             </li>
             <li>
@@ -116,10 +100,6 @@ export default function ImportGuide({
           <button className="primary guide-next" onClick={() => setStep(1)}>
             My Kobo is connected <ArrowRight size={16} />
           </button>
-          <p className="guide-footnote">
-            Use a computer for a direct USB import. On another device, you can
-            restore a library backup in Settings.
-          </p>
           <details className="guide-help">
             <summary>My Kobo doesn’t appear</summary>
             <p>
@@ -139,15 +119,14 @@ export default function ImportGuide({
               <FolderOpen size={25} />
             </span>
             <div>
-              <span className="eyebrow">STEP 2 · CHOOSE YOUR READING DATA</span>
               <h2 ref={heading} tabIndex={-1}>
-                Choose your Kobo’s folder.
+                Choose your files.
               </h2>
             </div>
           </div>
           <p className="guide-intro">
-            Select the <strong>KOBOeReader</strong> drive itself. We’ll look for
-            Kobo, KOReader and Kobalt reading records, then show you a preview.
+            Select the <strong>KOBOeReader</strong> drive, or choose individual
+            files.
           </p>
           <div className="guide-picker">{children}</div>
           <details className="guide-help">
@@ -204,41 +183,17 @@ export default function ImportGuide({
                 </>
               )}
             </p>
-            <p>
-              Choose multiple files to include more than one reader. You do not
-              need to install KOReader or Kobalt to import a standard Kobo
-              library.
-            </p>
+            <p>You can select files from more than one reader.</p>
           </details>
           <button className="text-link guide-back" onClick={() => setStep(0)}>
             <ArrowLeft size={14} />
             Connection instructions
           </button>
         </>
-      ) : (
-        <div className="guide-review">
-          <span className="guide-icon">
-            <Check size={25} />
-          </span>
-          <div>
-            <span className="eyebrow">STEP 3 · TAKE A LOOK</span>
-            <h2 ref={heading} tabIndex={-1}>
-              Your reading data is ready to review.
-            </h2>
-            <p>
-              Check the preview below, then choose{" "}
-              <strong>Import into my library</strong> to save it in this
-              browser. You can safely eject your Kobo after saving.
-            </p>
-          </div>
-        </div>
-      )}
-      <div className="guide-privacy">
+      ) : null}
+      <div className="guide-privacy" hidden={hasPreview || !!task}>
         <ShieldCheck size={16} />
-        <span>
-          Read locally. Nothing is installed on your Kobo. No reading database
-          is uploaded.
-        </span>
+        <span>Your files stay in this browser.</span>
       </div>
     </div>
   );
