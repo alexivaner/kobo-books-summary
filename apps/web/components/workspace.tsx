@@ -48,6 +48,7 @@ import { markdown } from "../../../packages/export";
 import { call, initialize, download, readFiles } from "../lib/client";
 import Activity from "./activity";
 import ImportGuide from "./import-guide";
+import type { ImportTask } from "./import-progress";
 import ReaderSources from "./reader-sources";
 import Modal from "./modal";
 import CoverLookup from "./cover-lookup";
@@ -129,6 +130,7 @@ function Empty({
   );
 }
 export default function Workspace() {
+  const [importTask, setImportTask] = useState<ImportTask | null>(null);
   const [storedData, setData] = useState<Library>(emptyLibrary),
     [includeStore, setIncludeStore] = useState(false),
     [autoEnrichment, setAutoEnrichment] = useState(false),
@@ -191,6 +193,10 @@ export default function Workspace() {
     },
     [storedData.books],
   );
+  const previewHeading = useRef<HTMLHeadingElement>(null);
+  useEffect(() => {
+    if (preview) previewHeading.current?.focus();
+  }, [preview]);
   const fileRef = useRef<HTMLInputElement>(null),
     folderRef = useRef<HTMLInputElement>(null),
     restoreRef = useRef<HTMLInputElement>(null);
@@ -346,6 +352,7 @@ export default function Workspace() {
     }
   }
   async function selectFiles(files: { path: string; file: File }[]) {
+    setImportTask({ stage: "read" });
     setBusy("Discovering reading sources…");
     setError("");
     setPreview(null);
@@ -355,7 +362,13 @@ export default function Workspace() {
           f.path,
         ),
       );
-      const input = await readFiles(metadata, setBusy);
+      await new Promise<void>((resolve) =>
+        requestAnimationFrame(() => resolve()),
+      );
+      const input = await readFiles(metadata, setBusy, (completed, total) =>
+        setImportTask({ stage: "read", completed, total }),
+      );
+      setImportTask({ stage: "parse" });
       let found = await call<Preview>(
         "preview",
         { files: input, deviceId: device.trim() },
@@ -395,6 +408,7 @@ export default function Workspace() {
         selected.push(asset);
       }
       if (selected.length) {
+        setImportTask({ stage: "covers" });
         setBusy("Extracting local cover artwork…");
         found = await call<Preview>("covers", {
           preview: found,
@@ -409,6 +423,7 @@ export default function Workspace() {
     } catch (e) {
       setError(e instanceof Error ? e.message : "Import failed");
     } finally {
+      setImportTask(null);
       setBusy("");
     }
   }
@@ -446,6 +461,8 @@ export default function Workspace() {
             )
           ) {
             files.push({ path: next, file: await h.getFile() });
+            if (files.length % 50 === 0)
+              setImportTask({ stage: "scan", completed: files.length });
             if (files.length > 15000)
               throw Error(
                 "Folder has too many files. Select source files instead.",
@@ -453,10 +470,12 @@ export default function Workspace() {
           }
         }
       }
+      setImportTask({ stage: "scan", completed: 0 });
       setBusy("Scanning selected folder…");
       await walk(root, "");
       await selectFiles(files);
     } catch (e) {
+      setImportTask(null);
       setBusy("");
       if (e instanceof Error && e.name !== "AbortError") setError(e.message);
     }
@@ -655,21 +674,10 @@ export default function Workspace() {
           >
             <Heart size={17} /> Support Development ↗
           </a>
-          <div className="privacy-card">
-            <span className="privacy-icon">
-              <ShieldCheck size={19} />
-            </span>
-            <strong>A little space. Just yours.</strong>
-            <p>
-              Your books and ideas stay on this device. Always in your hands.
-            </p>
-            <span className="local-dot">Local-first & private</span>
-          </div>
           <div className="sidebar-foot">
             <span className="avatar">Y</span>
             <div>
-              <strong>Your personal library</strong>
-              <small>No account needed</small>
+              <strong>Your library</strong>
             </div>
             <button
               aria-label="Toggle color theme"
@@ -751,7 +759,7 @@ export default function Workspace() {
               </button>
             </div>
           )}
-          {busy && (
+          {busy && !importTask && (
             <div className="banner" role="status">
               <Loader2 size={16} className="spin" />
               {busy}
@@ -1570,25 +1578,17 @@ export default function Workspace() {
               )}
               {page === "import" && (
                 <>
-                  <div className="page-heading">
-                    <div>
-                      <span className="eyebrow">BRING YOUR READING HOME</span>
-                      <h1>
-                        Connect your Kobo<span className="green">.</span>
-                      </h1>
-                      <p className="subtitle">
-                        A simple connection. A whole library of possibilities.
-                      </p>
-                    </div>
-                    <span className="count-badge">
-                      <ShieldCheck size={16} />
-                      100% local import
-                    </span>
+                  <div className="page-heading import-heading">
+                    <h1>
+                      Import your library<span className="green">.</span>
+                    </h1>
                   </div>
                   <div className="import-layout">
                     <section>
-                      <div className="panel connect-panel">
-                        <ImportGuide hasPreview={!!preview}>
+                      <div
+                        className={`panel connect-panel ${preview ? "has-preview" : ""}`}
+                      >
+                        <ImportGuide hasPreview={!!preview} task={importTask}>
                           <label className="field-label" htmlFor="device">
                             Kobo name{" "}
                             <span>
@@ -1630,9 +1630,6 @@ export default function Workspace() {
                           >
                             Use standard folder picker
                           </button>
-                          <small className="muted">
-                            Read-only access. No files on your Kobo are changed.
-                          </small>
                         </ImportGuide>
                         <input
                           className="sr-only"
@@ -1677,8 +1674,9 @@ export default function Workspace() {
                           aria-label="Import preview"
                         >
                           <div className="section-heading">
-                            <h2>Your import preview</h2>
-                            <span className="pill">Ready to review</span>
+                            <h2 ref={previewHeading} tabIndex={-1}>
+                              Ready to import
+                            </h2>
                           </div>
                           <p className="muted">
                             {preview.sources.join(" + ") ||
@@ -1767,14 +1765,14 @@ export default function Workspace() {
                               className="primary"
                               disabled={disabled || !preview.books.length}
                               onClick={async () => {
-                                setBusy("Committing your import…");
+                                setBusy("Saving your library…");
                                 try {
                                   setData(
                                     await call<Library>("commit", preview),
                                   );
                                   setPreview(null);
                                   setNotice(
-                                    "Your library is saved. You can safely eject your Kobo and keep reading here—even offline.",
+                                    "Library saved. You can eject your Kobo.",
                                   );
                                   navigate("library");
                                 } catch (e) {
@@ -1800,69 +1798,6 @@ export default function Workspace() {
                         </section>
                       )}
                     </section>
-                    <aside>
-                      <section className="panel import-help import-reassurance">
-                        <span className="eyebrow">A LITTLE PEACE OF MIND</span>
-                        <h2>Just your reading.</h2>
-                        <div className="import-assurance">
-                          <ShieldCheck size={19} />
-                          <div>
-                            <h3>Your Kobo stays yours</h3>
-                            <p>
-                              We read the files you choose. Nothing is
-                              installed, deleted or changed on your reader.
-                            </p>
-                          </div>
-                        </div>
-                        <div className="import-assurance">
-                          <BookOpen size={19} />
-                          <div>
-                            <h3>Pick up where you left off</h3>
-                            <p>
-                              Books, highlights and notes stay in this browser
-                              after you disconnect. No account needed.
-                            </p>
-                          </div>
-                        </div>
-                        <div className="import-assurance">
-                          <Download size={19} />
-                          <div>
-                            <h3>Keep a copy for yourself</h3>
-                            <p>
-                              After importing, open Settings and download a
-                              backup. Restore it to move your library to another
-                              browser or device.
-                            </p>
-                          </div>
-                        </div>
-                        <details>
-                          <summary>Importing again?</summary>
-                          <p>
-                            Use the same Kobo name. We update matching records
-                            and keep your saved topics and reflections. This is
-                            a manual import; new reading won’t appear until you
-                            import again.
-                          </p>
-                        </details>
-                        <details>
-                          <summary>A file says it’s still in use</summary>
-                          <p>
-                            Keep your Kobo on its USB connection screen. If the
-                            app reports a database journal, make a safe snapshot
-                            with the helper in the project README. Select
-                            companion files too so the app can check them.
-                          </p>
-                          <a
-                            href="https://github.com/alexivaner/kobo-books-summary#safe-snapshots"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-link"
-                          >
-                            Snapshot instructions ↗
-                          </a>
-                        </details>
-                      </section>
-                    </aside>
                   </div>
                   <section className="panel history">
                     <div className="section-heading">
@@ -2083,11 +2018,6 @@ export default function Workspace() {
           <footer className="page-footer">
             <span>
               <BookOpen size={14} /> Kobo Books Summary
-            </span>
-            <span>For the life between the pages.</span>
-            <span>
-              <ShieldCheck size={13} />
-              Private by nature.
             </span>
           </footer>
         </main>
