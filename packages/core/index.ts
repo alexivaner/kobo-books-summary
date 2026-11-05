@@ -121,6 +121,7 @@ export const SessionSchema = z.object({
     .enum(["session", "reader-event", "last-read", "annotation"])
     .optional(),
   startEstimated: z.boolean().optional(),
+  koboEventTypes: z.array(z.number().int().nonnegative()).max(8).optional(),
 });
 export type Session = z.infer<typeof SessionSchema>;
 export const SnapshotSchema = z.object({

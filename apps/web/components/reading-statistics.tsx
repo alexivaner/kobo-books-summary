@@ -20,6 +20,7 @@ import {
 import { groupBooks } from "../../../packages/core/grouping";
 import { createShareCard } from "../lib/share-card";
 import Modal from "./modal";
+import KoboSessionEstimates from "./kobo-session-estimates";
 const readers = { kobo: "Kobo", kobalt: "Kobalt", koreader: "KOReader" };
 function Thumbnail({ book }: { book: Book }) {
   const [failed, setFailed] = useState<string | null>(null);
@@ -317,6 +318,12 @@ export default function ReadingStatistics({
           : ""}
         Finishes without a known date appear in all-time totals.
       </p>
+      <KoboSessionEstimates
+        library={library}
+        period={period}
+        source={source}
+        onOpenBook={onOpenBook}
+      />
       <section
         className="panel statistics-months"
         aria-label="Monthly reading breakdown"

@@ -1,5 +1,5 @@
 import type { Database } from "sql.js";
-import { type Book, type Preview, stableId } from "../core";
+import { type Book, type Preview, type Session, stableId } from "../core";
 import { readQtMap } from "./qt";
 /** Native Kobo timestamps without a zone are UTC, not the importing browser's zone. */
 export function koboDate(value: unknown): string | null {
@@ -19,24 +19,40 @@ export function koboDate(value: unknown): string | null {
 export function importKoboHistory(db: Database, p: Preview) {
   const books = new Map(p.books.map((b) => [b.sourceId, b]));
   const seen = new Set<string>();
+  const activityRecords = new Map<string, Session>();
   let unsupported = 0,
     malformed = 0;
   const activity = (
     book: Book,
     start: string,
     evidence: "reader-event" | "last-read",
+    eventType?: number,
   ) => {
     const id = stableId(book.id, "kobo-activity", start);
-    if (seen.has(id)) return;
+    const previous = activityRecords.get(id);
+    if (previous) {
+      if (
+        eventType !== undefined &&
+        !previous.koboEventTypes?.includes(eventType)
+      )
+        previous.koboEventTypes = [
+          ...(previous.koboEventTypes || []),
+          eventType,
+        ];
+      return;
+    }
     seen.add(id);
-    p.sessions.push({
+    const record: Session = {
       id,
       bookId: book.id,
       start,
       duration: 0,
       kind: "recorded",
       evidence,
-    });
+      ...(eventType === undefined ? {} : { koboEventTypes: [eventType] }),
+    };
+    activityRecords.set(id, record);
+    p.sessions.push(record);
   };
   const table = db.exec(
     "SELECT 1 FROM sqlite_master WHERE type='table' AND name='Event'",
@@ -78,7 +94,12 @@ export function importKoboHistory(db: Database, p: Preview) {
                 date.getUTCFullYear() >= 1900 &&
                 date.getUTCFullYear() <= 9999
               )
-                activity(book, date.toISOString(), "reader-event");
+                activity(
+                  book,
+                  date.toISOString(),
+                  "reader-event",
+                  Number(type),
+                );
             }
         } catch {
           unsupported++;

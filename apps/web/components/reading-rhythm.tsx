@@ -19,6 +19,7 @@ import {
 } from "../../../packages/analytics/rhythm";
 import { groupBooks } from "../../../packages/core/grouping";
 import { readingStatistics } from "../../../packages/analytics/statistics";
+import KoboSessionEstimates from "./kobo-session-estimates";
 const calendarTime = (seconds: number) => {
   if (seconds > 0 && seconds < 60) return "<1m";
   const minutes = Math.round(seconds / 60);
@@ -206,6 +207,12 @@ export default function ReadingRhythm({
           duration. Filter by reader to inspect original records.
         </p>
       )}
+      <KoboSessionEstimates
+        library={library}
+        period={{ year: y, month: m }}
+        source={source}
+        onOpenBook={onOpenBook}
+      />
       <div className="rhythm-layout">
         <section
           className="panel rhythm-calendar"

@@ -24,6 +24,15 @@ test("one calendar combines native Kobo history, Kobalt sessions and KOReader in
       ExtraDataReadingSeconds: 7200,
     }),
   ]);
+  for (const [type, date] of [
+    [1020, "2026-09-21T10:00:00Z"],
+    [1021, "2026-09-21T10:30:00Z"],
+  ] as const)
+    native.run("INSERT INTO Event VALUES(?,?,CAST(? AS TEXT))", [
+      type,
+      "file:///mnt/onboard/The Quiet Atlas.epub",
+      qtMap({ eventTimestamps: [Date.parse(date) / 1000] }),
+    ]);
   const stats = new SQL.Database();
   stats.run(
     "CREATE TABLE book(id INT,title TEXT,authors TEXT,md5 TEXT,total_read_time INT,last_open INT)",
@@ -85,6 +94,13 @@ test("one calendar combines native Kobo history, Kobalt sessions and KOReader in
     page.getByRole("region", { name: "Monthly reading summary" }),
   ).toContainText("Not recorded");
   await page.getByLabel("Reading month").fill("2026-09");
+  const estimates = page.getByRole("region", {
+    name: "Kobo session estimates",
+  });
+  await expect(estimates).toContainText("≈ 30 min");
+  await estimates.getByText("View dates, sessions & books").click();
+  await expect(estimates).toContainText("The Quiet Atlas");
+  await expect(estimates).toContainText("elapsed");
   await page.getByRole("button", { name: /2026-09-21 · .* recorded/ }).click();
   await expect(selected).toContainText("Kobalt");
   await expect(selected).toContainText("KOReader");
@@ -124,4 +140,6 @@ test("one calendar combines native Kobo history, Kobalt sessions and KOReader in
   await context.setOffline(true);
   await page.reload();
   await expect(coverage).toContainText("2026-03-15");
+  await page.getByLabel("Reading month").fill("2026-09");
+  await expect(estimates).toContainText("≈ 30 min");
 });
