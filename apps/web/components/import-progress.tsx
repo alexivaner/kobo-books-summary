@@ -17,7 +17,7 @@ export default function ImportProgress({ task }: { task: ImportTask }) {
   useEffect(() => {
     title.current?.focus();
   }, []);
-  const measured = task.stage === "read" && !!task.total;
+  const measured = ["read", "covers"].includes(task.stage) && !!task.total;
   return (
     <section className="import-processing" aria-label="Preparing import">
       <div className="processing-heading">
@@ -30,7 +30,7 @@ export default function ImportProgress({ task }: { task: ImportTask }) {
         <span>{labels[task.stage]}</span>
         <span>
           {measured
-            ? `${task.completed || 0} of ${task.total} files`
+            ? `${task.completed || 0} of ${task.total} ${task.stage === "covers" ? "batches" : "files"}`
             : task.stage === "scan" && task.completed
               ? `${task.completed} found`
               : ""}

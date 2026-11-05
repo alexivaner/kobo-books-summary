@@ -37,7 +37,6 @@ import {
   emptyLibrary,
   readingLibrary,
   isReadingBook,
-  normalizePath,
 } from "../../../packages/core";
 import { analytics, duration } from "../../../packages/analytics";
 import {
@@ -56,6 +55,10 @@ import type { ImportTask } from "./import-progress";
 import ReaderSources from "./reader-sources";
 import Modal from "./modal";
 import CoverLookup from "./cover-lookup";
+import {
+  coverBatches,
+  isResourceFork,
+} from "../../../packages/importers/cover-plan";
 import AutomaticEnrichment from "./automatic-enrichment";
 import { BookHistory, EnrichedMetadata } from "./book-history";
 import { readingHistoryLabel } from "../../../packages/core/history";
@@ -363,10 +366,12 @@ export default function Workspace() {
     setError("");
     setPreview(null);
     try {
-      const metadata = files.filter((f) =>
-        /(?:KoboReader\.sqlite(?:-wal|-shm|-journal)?|statistics\.sqlite3(?:-wal|-shm|-journal)?|kobalt\.sqlite(?:-wal|-shm|-journal)?|metadata\.[\w]+\.lua)$/i.test(
-          f.path,
-        ),
+      const metadata = files.filter(
+        (f) =>
+          !isResourceFork(f.path) &&
+          /(?:KoboReader\.sqlite(?:-wal|-shm|-journal)?|statistics\.sqlite3(?:-wal|-shm|-journal)?|kobalt\.sqlite(?:-wal|-shm|-journal)?|metadata\.[\w]+\.lua)$/i.test(
+            f.path,
+          ),
       );
       await new Promise<void>((resolve) =>
         requestAnimationFrame(() => resolve()),
@@ -380,51 +385,30 @@ export default function Workspace() {
         { files: input, deviceId: device.trim() },
         setBusy,
       );
-      const assets = files.filter((f) =>
-        /\.(?:epub|parsed|jpg|jpeg|png)$/i.test(f.path),
-      );
-      const selected: { path: string; file: File }[] = [];
-      let bytes = 0,
-        skipped = 0;
-      for (const b of found.books) {
-        const image =
-          b.imageId &&
-          assets.find(
-            (f) =>
-              f.path.includes(b.imageId!) &&
-              /\.(?:parsed|jpg|jpeg|png)$/i.test(f.path),
-          );
-        const asset =
-          image ||
-          assets.find(
-            (f) =>
-              b.path &&
-              normalizePath(f.path).endsWith(b.path) &&
-              /\.epub$/i.test(f.path),
-          );
-        if (!asset || selected.includes(asset)) continue;
-        if (
-          asset.file.size > 64_000_000 ||
-          bytes + asset.file.size > 128_000_000
-        ) {
-          skipped++;
-          continue;
+      for (const kind of ["images", "epubs"] as const) {
+        const batches = coverBatches(found.books, files, kind);
+        for (let i = 0; i < batches.length; i++) {
+          setImportTask({
+            stage: "covers",
+            completed: i,
+            total: batches.length,
+          });
+          setBusy("Extracting local cover artwork…");
+          found = await call<Preview>("covers", {
+            preview: found,
+            files: await readFiles(batches[i], setBusy),
+          });
+          setImportTask({
+            stage: "covers",
+            completed: i + 1,
+            total: batches.length,
+          });
         }
-        bytes += asset.file.size;
-        selected.push(asset);
       }
-      if (selected.length) {
-        setImportTask({ stage: "covers" });
-        setBusy("Extracting local cover artwork…");
-        found = await call<Preview>("covers", {
-          preview: found,
-          files: await readFiles(selected, setBusy),
-        });
-      }
-      if (skipped)
-        found.diagnostics.push(
-          `${skipped} cover sources skipped to keep import memory bounded. Generated covers will be used.`,
-        );
+      const shelf = found.books.filter(isReadingBook);
+      found.diagnostics.push(
+        `${shelf.filter((b) => b.cover).length} of ${shelf.length} reading-library records have local covers. Missing artwork can be looked up in Settings.`,
+      );
       setPreview(found);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Import failed");

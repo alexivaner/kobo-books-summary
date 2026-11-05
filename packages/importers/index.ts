@@ -7,6 +7,7 @@ import {
   stableId,
   normalizePath,
 } from "../core";
+import { isResourceFork } from "./cover-plan";
 import { importKobalt } from "./kobalt";
 import { parseLua } from "./lua";
 import { unzipSync, strFromU8 } from "fflate";
@@ -490,7 +491,9 @@ export async function discover(
 }
 
 export function attachCovers(p: Preview, files: InputFile[]): Preview {
+  files = files.filter((f) => !isResourceFork(f.path));
   for (const b of p.books) {
+    if (b.cover) continue;
     try {
       const image =
         b.imageId &&
