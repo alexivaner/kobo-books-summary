@@ -2,7 +2,7 @@ import { test, expect } from "@playwright/test";
 import path from "node:path";
 test("guided connection explains files and advances to review before saving", async ({
   page,
-}) => {
+}, testInfo) => {
   await page.goto("/#import");
   await expect(page.getByText("Opening your local library…")).toBeHidden();
   await expect(
@@ -12,7 +12,7 @@ test("guided connection explains files and advances to review before saving", as
     page.getByLabel("Import progress").locator('[aria-current="step"]'),
   ).toContainText("Connect");
   await page.screenshot({
-    path: "/private/tmp/kobo-guide-connect.png",
+    path: testInfo.outputPath("kobo-guide-connect.png"),
     fullPage: true,
   });
   await page.getByRole("button", { name: "My Kobo is connected" }).click();
@@ -33,7 +33,7 @@ test("guided connection explains files and advances to review before saving", as
     page.getByText("View → Show → Hidden items", { exact: true }),
   ).toBeVisible();
   await page.screenshot({
-    path: "/private/tmp/kobo-guide-files.png",
+    path: testInfo.outputPath("kobo-guide-files.png"),
     fullPage: true,
   });
   await page.getByRole("button", { name: "Mac", exact: true }).click();

@@ -18,7 +18,7 @@ async function importFile(page: import("@playwright/test").Page) {
 }
 test("manual combine and split preserve annotations and latest progress across reload", async ({
   page,
-}) => {
+}, testInfo) => {
   await page.goto("/");
   await expect(page.getByText("Opening your local library…")).toBeHidden();
   await importFile(page);
@@ -41,7 +41,7 @@ test("manual combine and split preserve annotations and latest progress across r
     await page.getByText("Manage book matches", { exact: true }).click();
   await page
     .locator(".reader-sources")
-    .screenshot({ path: "/private/tmp/kobo-reader-sources.png" });
+    .screenshot({ path: testInfo.outputPath("kobo-reader-sources.png") });
   await page.getByRole("button", { name: "My library", exact: true }).click();
   await expect(page.locator(".book-card")).toHaveCount(1);
   await page.reload();
