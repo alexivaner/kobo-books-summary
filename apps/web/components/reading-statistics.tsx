@@ -284,6 +284,22 @@ export default function ReadingStatistics({
           </div>
         ))}
       </section>
+      {period.year !== null && stats.unallocatedSeconds > 0 && (
+        <aside className="panel" aria-label="Incomplete time history">
+          <strong>Incomplete time history</strong>
+          <p>
+            {stats.seconds === null
+              ? "No timed sessions were imported for this period."
+              : `The ${duration(stats.seconds)} above comes only from imported dated sessions.`}{" "}
+            Books active in this period also have lifetime reading time without
+            a dated session breakdown. Those hours cannot be assigned to this
+            {period.month === null ? " year" : " month"}.
+          </p>
+          <p>
+            Lifetime totals remain available under All time and on each book.
+          </p>
+        </aside>
+      )}
       <p className="statistics-evidence">
         {period.year === null
           ? "All-time totals include undated book counters. Year and month views use dated sessions only."
@@ -416,11 +432,17 @@ export default function ReadingStatistics({
                     {by === "days"
                       ? row.seconds === null
                         ? "Time unavailable"
-                        : duration(row.seconds)
+                        : `${duration(row.seconds)} ${period.year === null ? "lifetime" : "in dated sessions"}`
                       : row.days
                         ? `${row.days} active days`
                         : "Dates unavailable"}
                   </span>
+                  {period.year !== null && row.unallocatedSeconds > 0 && (
+                    <span>
+                      Lifetime: {duration(row.lifetimeSeconds!)} · date split
+                      unavailable
+                    </span>
+                  )}
                 </span>
                 <ArrowUpRight size={18} />
               </button>

@@ -87,6 +87,9 @@ test("statistics filter measured time and generate a private cover share card of
   await expect(summary).toContainText("1h 41m");
   await page.getByLabel("Statistics year").selectOption("2026");
   await expect(summary).toContainText("30 sec");
+  await expect(page.getByLabel("Incomplete time history")).toContainText(
+    "The 30 sec above comes only from imported dated sessions.",
+  );
   await page.getByLabel("Statistics month").selectOption("2");
   await expect(summary).toContainText("Not recorded");
   await expect(
@@ -94,6 +97,12 @@ test("statistics filter measured time and generate a private cover share card of
   ).toContainText("The Quiet Atlas");
   await page.getByLabel("Statistics month").selectOption("10");
   await expect(summary).toContainText("Not recorded");
+  await expect(page.getByLabel("Incomplete time history")).toContainText(
+    "cannot be assigned to this month",
+  );
+  await expect(
+    page.getByRole("region", { name: "Most read books" }),
+  ).toContainText("date split unavailable");
   await expect(
     page.getByRole("region", { name: "Most read books" }),
   ).toContainText("The Quiet Atlas");

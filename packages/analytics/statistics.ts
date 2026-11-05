@@ -15,6 +15,8 @@ export type BookStatistic = {
   days: number;
   sessions: number;
   finished: boolean;
+  lifetimeSeconds: number | null;
+  unallocatedSeconds: number;
 };
 export function inPeriod(value: string, period: Period) {
   const key = dayKey(value);
@@ -56,6 +58,14 @@ export function readingStatistics(
               minimum: v.overlaps,
             };
           })();
+    const lifetime = bookTime({
+      books: group.members,
+      sessions: all.filter((s) => members.has(s.bookId)),
+    });
+    const dated = combinedTime({
+      books: group.members,
+      sessions: all.filter((s) => members.has(s.bookId)),
+    });
     const finished =
       period.year === null
         ? group.members.some(
@@ -75,6 +85,12 @@ export function readingStatistics(
         days: new Set(events.map((s) => dayKey(s.start))).size,
         sessions: events.filter(isTimed).length,
         finished,
+        lifetimeSeconds: lifetime.seconds,
+        // A lifetime counter cannot be allocated using event/annotation dates.
+        unallocatedSeconds: Math.max(
+          0,
+          (lifetime.seconds ?? 0) - dated.seconds,
+        ),
       });
   }
   const time =
@@ -108,6 +124,7 @@ export function readingStatistics(
     finished: rows.filter((r) => r.finished).length,
     sessions: timed.length,
     undatedBooks: rows.filter((r) => r.seconds === null).length,
+    unallocatedSeconds: rows.reduce((n, r) => n + r.unallocatedSeconds, 0),
     rows,
     years,
   };
