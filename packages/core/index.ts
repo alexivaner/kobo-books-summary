@@ -1,15 +1,70 @@
 import { z } from "zod";
 export const Source = z.enum(["kobo", "koreader", "kobalt"]);
+export const ReadingHistorySchema = z.object({
+  everFinished: z.boolean(),
+  completedDates: z.array(z.string().datetime()),
+  completionCountMinimum: z.number().int().nonnegative(),
+  rereadingEvidence: z.enum([
+    "none",
+    "observed-status-change",
+    "completion-date-and-progress",
+    "completion-marker-and-progress",
+  ]),
+});
+export type ReadingHistory = z.infer<typeof ReadingHistorySchema>;
+
+export const EnrichmentSchema = z.object({
+  status: z.enum(["matched", "not-found", "needs-review", "error"]),
+  checkedAt: z.string().datetime(),
+  queryKey: z.string().max(6000).optional(),
+  matcherVersion: z.number().int().optional(),
+  nextRetryAt: z.string().datetime().optional(),
+  message: z.string().max(500).optional(),
+  coverStatus: z.enum(["pending", "cached", "local", "unavailable"]).optional(),
+  metadata: z
+    .object({
+      provider: z.literal("openlibrary"),
+      scope: z.literal("work"),
+      pageUrl: z
+        .string()
+        .regex(/^https:\/\/openlibrary\.org\/(?:works|books)\/OL\d+[WM]$/),
+      title: z.string().max(2000),
+      authors: z.array(z.string().max(500)).max(30),
+      firstPublishedYear: z.number().int().min(-5000).max(3000).optional(),
+      languages: z.array(z.string().max(100)).max(20),
+      publishers: z.array(z.string().max(500)).max(10),
+      subjects: z.array(z.string().max(500)).max(20),
+      coverId: z.number().int().positive().optional(),
+    })
+    .optional(),
+});
+export type Enrichment = z.infer<typeof EnrichmentSchema>;
 export const BookSchema = z.object({
   id: z.string(),
   source: Source,
   sourceId: z.string(),
+  groupOverride: z.string().max(500).optional(),
   title: z.string(),
   author: z.string(),
   path: z.string().optional(),
   isbn: z.string().optional(),
   imageId: z.string().optional(),
   metadataRecovered: z.boolean().optional(),
+  lastStartedAt: z.string().nullable().optional(),
+  sourceStartCount: z.number().int().nonnegative().optional(),
+  sourceCompletionMarker: z.boolean().optional(),
+  readingHistory: ReadingHistorySchema.optional(),
+  enrichment: EnrichmentSchema.optional(),
+  readerMetadata: z
+    .object({
+      source: Source,
+      publisher: z.string().max(1000).optional(),
+      language: z.string().max(100).optional(),
+      series: z.string().max(2000).optional(),
+      seriesNumber: z.string().max(100).optional(),
+      description: z.string().max(20000).optional(),
+    })
+    .optional(),
   libraryKind: z
     .enum(["full", "preview", "recommendation", "catalog"])
     .optional(),

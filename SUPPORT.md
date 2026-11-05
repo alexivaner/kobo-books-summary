@@ -1,7 +1,7 @@
 # Supporting development
 
-Kobo Books Summary is a local-first, MIT-licensed project maintained by [alexivaner](https://github.com/alexivaner).
+Kobo Books Summary is free and open-source, maintained by [Ivan Surya Hutomo](https://github.com/alexivaner).
 
-A future public release may offer optional donations to support maintenance and improvements. No donation provider, checkout, paid feature, funding destination, or public deployment is configured in this version. Core local reading and knowledge features are intended to remain useful without payment or an account.
+If you find it useful, [support continued development on Ko-fi](https://ko-fi.com/hutomoivan). Donations are optional and never unlock, restrict or interrupt features. Payment details are handled by Ko-fi, outside this application.
 
-Before a public release: choose and verify the donation destination, configure a funding link, review branding/provider terms, validate the hosted offline/storage flow, and publish only synthetic screenshots. Hosting the app must not introduce uploads of private reading data.
+Bug reports, documentation and contributions are welcome. Use synthetic examples and remove private library data before sharing reports.

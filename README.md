@@ -10,9 +10,22 @@ A local-first reading knowledge platform for **Kobo, KOReader, and Kobalt**. Kee
 - Keep **store previews and catalog records separate** from the reading shelf and statistics by default. Downloaded unread books and recorded reading history remain visible. An optional library toggle reveals store records without deleting anything.
 - Browse your library, search multilingual annotations, save favorites, organize topics, connect ideas across books, and write personal reflections.
 - Preserve source ids, quotation/note separation, source-hidden annotations, historical records, and repeated-import identity.
-- Use local Kobo/EPUB covers first. **Find cover** offers a manual Open Library lookup for a selected book; it discloses the metadata shared and saves the chosen image privately for offline use.
+- Use local Kobo/EPUB covers first. Optional automatic enrichment looks up the reading library in grouped requests, saves confident covers/metadata, and resumes pending work. **Find cover** remains available for manual review. Both disclose the metadata shared; cached results work offline.
+- Track **ever finished** and recorded completion dates separately from current progress. Label rereading as observed/inferred, preserve known history across imports, and distinguish start counters from reread counts.
 - Export book notes to Markdown/JSON, and back up or restore the complete local library.
 - Responsive light/dark interface, recorded activity calendar, and offline browsing after the production app has loaded.
+
+## Public beta
+
+The source is ready to run locally. Website publication is pending the hosting credential handoff; a live URL will be added after deployment is verified.
+
+Public beta: imports and library storage stay in your browser. Optional Open Library lookup is off until enabled. Back up regularly; site data can be cleared. See [PRIVACY.md](PRIVACY.md).
+
+## Open the app
+
+On macOS, double-click **Open Kobo Books Summary.command** in the project folder. It starts the local server and opens [http://127.0.0.1:3000](http://127.0.0.1:3000). Keep its Terminal window open. If already installed/built, `pnpm start` is the equivalent terminal command.
+
+Your data belongs to the browser/profile that imported it. The Codex preview and regular Chrome have separate local libraries even at the same URL. To move to your everyday browser, download a backup in the current preview and restore it once in the other browser. The launcher does not silently move private data between profiles.
 
 ## Quick start
 
@@ -52,7 +65,7 @@ Supported sources:
 | KOReader | `*.sdr/metadata.*.lua`                       | Progress, book properties, modern highlights/notes and supported legacy highlights                       |
 | Kobalt   | `.adds/kobalt/kobalt.sqlite`                 | Highlights, personal notes, bookmarks, book state/progress and recorded reading sessions where available |
 
-Kobalt bookmarks remain labeled bookmarks and do not inflate highlight counts. Kobalt session timestamps and active durations use milliseconds in the source and are normalized to ISO dates/seconds. Native, KOReader and Kobalt records retain separate provenance; uncertain cross-reader editions are not merged automatically.
+Kobalt bookmarks remain labeled bookmarks and do not inflate highlight counts. Kobalt session timestamps and active durations use milliseconds in the source and are normalized to ISO dates/seconds. Native, KOReader and Kobalt records retain separate provenance; verified same-file/ISBN records share one shelf card. Uncertain matches can be combined manually in book details and split again. All source records and annotations remain intact.
 
 ### Safe snapshots
 
@@ -63,14 +76,14 @@ For repeatable standalone snapshots:
 ```sh
 python3 scripts/snapshot-device.py \
   --device /Volumes/KOBOeReader \
-  --output /private/tmp/my-kobo-snapshot
+  --output /private/tmp/my-kobo-snapshot --include-covers
 ```
 
-Select the output folder in the app. The helper copies databases/companions into temporary storage, checks source stability, and uses SQLite backup on the copies. It includes KOReader sidecars; it does not copy EPUBs or cover collections. Use a fresh output directory for each run, outside Git. The mounted originals are never opened by SQLite or modified.
+Select the output folder in the app. The helper copies databases/companions into temporary storage, checks source stability, and uses SQLite backup on the copies. It includes KOReader sidecars. Optional `--include-covers` copies one available local image per native reading-book identifier; no EPUB content is copied. Use a fresh output directory for each run, outside Git. The mounted originals are never opened by SQLite or modified.
 
 ### Cover lookup and privacy
 
-Local cover assets are preferred, with generated artwork as a fallback. In book details, **Find cover → Search Open Library** sends the selected book's ISBN, or title/author if no usable ISBN exists, directly from the browser to Open Library. Choose a candidate to download its cover. Notes, highlights and reflections are never sent. No automatic bulk fetching or remote lookup runs on import or page load.
+Local cover assets are preferred, with generated artwork as a fallback. In book details, **Find cover → Search Open Library** sends the selected book's ISBN, or title/author if no usable ISBN exists, directly from the browser to Open Library. Choose a candidate to download its cover. Notes, highlights and reflections are never sent. By default no remote lookup runs on import or page load. **Settings → Automatic covers & metadata** enables automatic processing for reading-library records, including new imports. It sends titles/authors or ISBNs once per grouped lookup title, spaces requests by at least four seconds, caches completed jobs with query identity and matcher version, and backs off for fifteen minutes on provider failures. Preview/catalog records are excluded. Ambiguous matches require review. Missing results expire after 30 days or can be retried manually; failed covers are included in retry controls. Publication year/languages/subjects are attributed as work-level metadata and never overwrite source fields.
 
 Open Library is a public, open-source service with a [Covers API](https://openlibrary.org/dev/docs/api/covers). Coverage varies; the API can return no cover or impose rate limits. Review edition matches. Artwork retains its original rights; the project does not distribute third-party book covers in its repository. Attribution is saved with downloaded covers. API response/download limits and allowed hosts are enforced.
 
@@ -112,10 +125,14 @@ GitHub Actions runs synthetic tests, type checking, lint, production build, and 
 
 ## Contribute and support
 
-See [CONTRIBUTING.md](CONTRIBUTING.md), [SECURITY.md](SECURITY.md), and [SUPPORT.md](SUPPORT.md). Public deployment and optional donations are planned; no payment service or public hosting is configured yet. AI providers, semantic search, edition merging, desktop USB discovery, scheduled review and social cards remain future work.
+See [CONTRIBUTING.md](CONTRIBUTING.md), [SECURITY.md](SECURITY.md), and [SUPPORT.md](SUPPORT.md). [Support development on Ko-fi](https://ko-fi.com/hutomoivan), entirely optionally. Hosting configuration and GitHub-connected Cloudflare Pages instructions are in [docs/CLOUDFLARE_DEPLOYMENT.md](docs/CLOUDFLARE_DEPLOYMENT.md). AI providers, semantic search, desktop USB discovery, scheduled review and social cards remain future work.
 
 ## License and acknowledgments
 
 [MIT](LICENSE), for this project's code. Dependencies and third-party artwork retain their own licenses. Thanks to the [Kobalt](https://github.com/nicoverbruggen/kobalt), [KOReader](https://github.com/koreader/koreader), [calibre](https://github.com/kovidgoyal/calibre), [sql.js](https://sql.js.org/) and [Open Library](https://openlibrary.org/) communities for their software and documented data formats.
 
 This independent project is not affiliated with Rakuten Kobo, Kobalt, KOReader, or the Internet Archive. Kobo is a trademark of its respective owner. The repository screenshot and automated fixtures are synthetic; no personal reading databases, quotes, or EPUBs are included.
+
+## Completion and rereading history
+
+Book details show recorded source completion dates and finished states retained across imports. A current reading state after a known completion is labeled as inferred rereading unless a finished-to-reading state change was observed across imported snapshots. Kobalt completion pointers provide undated evidence, never an invented finish date. Kobo `TimesStartedReading` is displayed as a start counter, not a lifetime reread count. Exact historical reread counts are unavailable when the reader retained only its latest state/date.

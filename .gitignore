@@ -20,3 +20,5 @@ kobo-library-*.json
 /snapshots/
 apps/web/public/sw.js
 apps/web/public/offline-assets.json
+
+/hosting-source/

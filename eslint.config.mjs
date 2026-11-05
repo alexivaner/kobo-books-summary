@@ -1,7 +1,15 @@
 import next from "eslint-config-next/core-web-vitals";
 const config = [
   ...next,
-  { ignores: ["**/.next/**", "**/public/vendor/**", "**/public/sw.js"] },
+  {
+    ignores: [
+      "**/.next/**",
+      "**/out/**",
+      "hosting-source/**",
+      "**/public/vendor/**",
+      "**/public/sw.js",
+    ],
+  },
   {
     rules: {
       "@next/next/no-img-element": "off",
