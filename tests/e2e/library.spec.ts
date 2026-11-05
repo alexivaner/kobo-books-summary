@@ -189,6 +189,7 @@ test("directory fallback discovers native and KOReader files", async ({
 }) => {
   await page.goto("/#import");
   await expect(page.getByText("Opening your local library…")).toBeHidden();
+  await page.getByRole("button", { name: "My Kobo is connected" }).click();
   const folderChooser = page.waitForEvent("filechooser");
   await page
     .getByRole("button", { name: "Use standard folder picker", exact: true })

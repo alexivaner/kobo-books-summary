@@ -9,14 +9,22 @@ const date = (s: string) =>
     month: "short",
     day: "numeric",
   });
-export function BookHistory({ book }: { book: Book }) {
+export function BookHistory({
+  book,
+  compact = false,
+}: {
+  book: Book;
+  compact?: boolean;
+}) {
   const h = book.readingHistory || readingHistory(book);
   return (
     <section
-      className="panel history-panel"
+      className={
+        compact ? "history-panel compact-history" : "panel history-panel"
+      }
       aria-label="Book completion and rereading history"
     >
-      <h2>Reading history</h2>
+      {!compact && <h2>Reading history</h2>}
       <strong>{readingHistoryLabel(book)}</strong>
       <dl className="database-info">
         <div>
