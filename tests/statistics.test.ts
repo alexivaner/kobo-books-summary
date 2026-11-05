@@ -121,6 +121,7 @@ it("keeps a lifetime book counter separate from another book's short monthly ses
   };
   const october = readingStatistics(library, { year: 2026, month: 10 });
   expect(october.seconds).toBe(9);
+  expect(october.incompleteTime).toBe(true);
   expect(october.unallocatedSeconds).toBe(53959);
   const long = october.rows.find((r) => r.book.id === "long-book")!;
   expect(long.seconds).toBeNull();
@@ -128,6 +129,26 @@ it("keeps a lifetime book counter separate from another book's short monthly ses
   expect(readingStatistics(library, { year: null, month: null }).seconds).toBe(
     53968,
   );
+});
+it("marks activity-only book days as incomplete even without a lifetime counter", () => {
+  const library: Library = {
+    ...emptyLibrary,
+    books: [book("one", "kobalt")],
+    sessions: [
+      session("timed", "one", "2026-10-01T12:00:00Z", 3600),
+      {
+        ...session("activity", "one", "2026-10-02T12:00:00Z", 0),
+        evidence: "annotation",
+      },
+    ],
+  };
+  expect(
+    readingStatistics(library, { year: 2026, month: 10 }).incompleteTime,
+  ).toBe(true);
+  library.sessions.pop();
+  expect(
+    readingStatistics(library, { year: 2026, month: 10 }).incompleteTime,
+  ).toBe(false);
 });
 it("ranks frequency by distinct reading days rather than page-event volume", () => {
   const lib = fixture();

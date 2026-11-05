@@ -3368,6 +3368,13 @@ textarea {
     30px/1.2 Georgia,
     serif;
 }
+.time-coverage-detail {
+  display: block;
+  margin-top: 10px;
+  color: var(--muted);
+  font-size: 16px;
+  line-height: 1.5;
+}
 .rhythm-evidence {
   font-size: 14px;
   color: var(--muted);

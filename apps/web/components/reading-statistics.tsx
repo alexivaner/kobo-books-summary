@@ -86,7 +86,10 @@ export default function ReadingStatistics({
       ),
     [library, allStats.years, source],
   );
-  const max = Math.max(1, ...months.map((s) => s.seconds || 0));
+  const max = Math.max(
+    1,
+    ...months.map((s) => (s.incompleteTime ? 0 : s.seconds || 0)),
+  );
   const [preview, setPreview] = useState(false),
     [showBooks, setShowBooks] = useState(true),
     [url, setUrl] = useState(""),
@@ -269,30 +272,35 @@ export default function ReadingStatistics({
           [
             period.year === null
               ? "Recorded book time"
-              : "Recorded session time",
+              : period.month === null
+                ? "Yearly reading time"
+                : "Monthly reading time",
             stats.seconds === null
               ? "Not recorded"
-              : `${stats.minimum ? "At least " : ""}${duration(stats.seconds)}`,
+              : stats.incompleteTime
+                ? "Incomplete"
+                : `${stats.minimum ? "At least " : ""}${duration(stats.seconds)}`,
+            stats.incompleteTime && stats.seconds !== null
+              ? `${duration(stats.seconds)} in imported timed sessions`
+              : "",
           ],
           ["Active days", stats.activeDays],
           ["Books explored", stats.books],
           ["Recorded finishes", stats.finished],
-        ].map(([label, value]) => (
+        ].map(([label, value, detail]) => (
           <div className="panel" key={label}>
             <span>{label}</span>
             <strong>{value}</strong>
+            {detail && <small className="time-coverage-detail">{detail}</small>}
           </div>
         ))}
       </section>
-      {period.year !== null && stats.unallocatedSeconds > 0 && (
+      {stats.incompleteTime && (
         <aside className="panel" aria-label="Incomplete time history">
           <strong>Incomplete time history</strong>
           <p>
-            {stats.seconds === null
-              ? "No timed sessions were imported for this period."
-              : `The ${duration(stats.seconds)} above comes only from imported dated sessions.`}{" "}
-            Books active in this period also have lifetime reading time without
-            a dated session breakdown. Those hours cannot be assigned to this
+            Some reading activity has no timed session record. Lifetime book
+            totals cannot be assigned to this
             {period.month === null ? " year" : " month"}.
           </p>
           <p>
@@ -324,19 +332,23 @@ export default function ReadingStatistics({
                 period.year === year && period.month === i + 1 ? "selected" : ""
               }
               key={i}
-              aria-label={`${new Date(year, i, 15).toLocaleDateString(undefined, { month: "long", year: "numeric" })}: ${m.seconds === null ? "duration unavailable" : duration(m.seconds)}, ${m.activeDays} active days`}
+              aria-label={`${new Date(year, i, 15).toLocaleDateString(undefined, { month: "long", year: "numeric" })}: ${m.incompleteTime ? "incomplete time history, " : ""}${m.seconds === null ? "duration unavailable" : duration(m.seconds) + " in timed sessions"}, ${m.activeDays} active days`}
               onClick={() => select({ year, month: i + 1 })}
             >
               <span className="month-bar-track">
                 <span
                   style={{
-                    height: m.seconds
-                      ? `${Math.max(8, (m.seconds / max) * 100)}%`
-                      : m.activeDays
-                        ? "12%"
-                        : "0%",
+                    height: m.incompleteTime
+                      ? "12%"
+                      : m.seconds
+                        ? `${Math.max(8, (m.seconds / max) * 100)}%`
+                        : m.activeDays
+                          ? "12%"
+                          : "0%",
                   }}
-                  className={m.seconds === null ? "date-only" : ""}
+                  className={
+                    m.seconds === null || m.incompleteTime ? "date-only" : ""
+                  }
                 />
               </span>
               <strong>
@@ -349,14 +361,17 @@ export default function ReadingStatistics({
                   ? m.activeDays
                     ? "Read"
                     : "—"
-                  : duration(m.seconds)}
+                  : m.incompleteTime
+                    ? "Partial"
+                    : duration(m.seconds)}
               </small>
             </button>
           ))}
         </div>
         <p className="muted">
           Choose a month to explore it. Read means activity is recorded but its
-          duration is unavailable.
+          duration is unavailable. Partial means timed records cover only part
+          of the activity.
         </p>
       </section>
       {yearly.length > 0 && (
@@ -372,7 +387,9 @@ export default function ReadingStatistics({
                 <span>
                   {y.seconds === null
                     ? "Time not recorded"
-                    : `${y.minimum ? "At least " : ""}${duration(y.seconds)}`}
+                    : y.incompleteTime
+                      ? `${duration(y.seconds)} in timed sessions · incomplete`
+                      : `${y.minimum ? "At least " : ""}${duration(y.seconds)}`}
                 </span>
                 <span>
                   {y.activeDays} active days · {y.books} books

@@ -77,19 +77,29 @@ export async function createShareCard(
   c.fillStyle = sage;
   c.font = "28px sans-serif";
   c.fillText(
-    stats.period.year === null ? "RECORDED BOOK TIME" : "RECORDED SESSION TIME",
+    stats.period.year === null ? "RECORDED BOOK TIME" : "PERIOD READING TIME",
     108,
     349,
   );
   c.fillStyle = cream;
-  c.font = `${stats.seconds === null ? 58 : 86}px Georgia`;
+  c.font = `${stats.seconds === null || stats.incompleteTime ? 58 : 86}px Georgia`;
   c.fillText(
     stats.seconds === null
       ? "Time not recorded"
-      : `${stats.minimum ? "At least " : ""}${duration(stats.seconds)}`,
+      : stats.incompleteTime
+        ? "Incomplete time history"
+        : `${stats.minimum ? "At least " : ""}${duration(stats.seconds)}`,
     108,
     452,
   );
+  if (stats.incompleteTime && stats.seconds !== null) {
+    c.font = "26px sans-serif";
+    c.fillText(
+      `${duration(stats.seconds)} in imported timed sessions`,
+      108,
+      495,
+    );
+  }
   const metrics = [
     [stats.activeDays, "recorded days"],
     [stats.books, "books explored"],
@@ -185,7 +195,7 @@ export async function createShareCard(
   c.fillText(
     stats.period.year === null
       ? "Imported book totals · coverage may be incomplete"
-      : stats.unallocatedSeconds > 0
+      : stats.incompleteTime
         ? "Incomplete time history · dated sessions only"
         : "Timed sessions only · some activity has no recorded duration",
     72,

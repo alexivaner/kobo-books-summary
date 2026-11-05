@@ -41,6 +41,12 @@ export function readingStatistics(
     timed = records.filter(isTimed);
   const groups = groupBooks(books),
     rows: BookStatistic[] = [];
+  const canonical = new Map(
+    groups.flatMap((g) => g.members.map((b) => [b.id, g.book.id] as const)),
+  );
+  const activityKey = (s: (typeof records)[number]) =>
+    `${canonical.get(s.bookId)}|${dayKey(s.start)}`;
+  const timedDays = new Set(timed.map(activityKey));
   const completionDates = (b: Book) => [
     ...(b.readingHistory?.completedDates || []),
     ...(b.finishedAt ? [b.finishedAt] : []),
@@ -114,6 +120,11 @@ export function readingStatistics(
       ),
     ]),
   ].sort((a, b) => b - a);
+  const unallocatedSeconds = rows.reduce((n, r) => n + r.unallocatedSeconds, 0);
+  const incompleteTime =
+    period.year !== null &&
+    (unallocatedSeconds > 0 ||
+      records.some((s) => !isTimed(s) && !timedDays.has(activityKey(s))));
   return {
     period,
     source,
@@ -124,7 +135,8 @@ export function readingStatistics(
     finished: rows.filter((r) => r.finished).length,
     sessions: timed.length,
     undatedBooks: rows.filter((r) => r.seconds === null).length,
-    unallocatedSeconds: rows.reduce((n, r) => n + r.unallocatedSeconds, 0),
+    unallocatedSeconds,
+    incompleteTime,
     rows,
     years,
   };
