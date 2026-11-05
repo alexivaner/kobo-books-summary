@@ -1,6 +1,8 @@
 import type { Database, SqlJsStatic } from "sql.js";
 import {
   BookSchema,
+  EnrichmentSchema,
+  type Enrichment,
   AnnotationSchema,
   SessionSchema,
   SnapshotSchema,
@@ -11,6 +13,8 @@ import {
   type Knowledge,
   type Reflection,
 } from "../core";
+import { lookupQueryKey } from "../enrichment";
+import { readingHistory, type Attempt } from "../core/history";
 export const tables = [
   "books",
   "editions",
@@ -95,6 +99,9 @@ export class Store {
     this.transaction(() => {
       this.put("devices", { id: input.deviceId, ...{ label: input.deviceId } });
       const existing = new Map(this.all<Book>("books").map((x) => [x.id, x]));
+      const histories = new Map<string, Attempt[]>();
+      for (const a of this.all<Attempt>("attempts"))
+        histories.set(a.bookId, [...(histories.get(a.bookId) || []), a]);
       for (const b of books) {
         const old = existing.get(b.id);
         const saved =
@@ -102,10 +109,20 @@ export class Store {
             ? { ...old, metadataRecovered: true }
             : {
                 ...b,
+                groupOverride: old?.groupOverride,
+                enrichment:
+                  old && lookupQueryKey(old) === lookupQueryKey(b)
+                    ? old.enrichment
+                    : undefined,
                 cover: b.cover || old?.cover,
                 coverSource: b.cover ? undefined : old?.coverSource,
                 coverAttribution: b.cover ? undefined : old?.coverAttribution,
               };
+        saved.readingHistory = readingHistory(
+          saved,
+          old,
+          histories.get(b.id) || [],
+        );
         this.put("books", saved);
         this.put("editions", {
           id: b.id,
@@ -158,8 +175,16 @@ export class Store {
     });
   }
   library(storage: string): Library {
+    const histories = new Map<string, Attempt[]>();
+    for (const a of this.all<Attempt>("attempts"))
+      histories.set(a.bookId, [...(histories.get(a.bookId) || []), a]);
     return {
-      books: this.all("books"),
+      books: this.all<Book>("books").map((b) => ({
+        ...b,
+        readingHistory:
+          b.readingHistory ||
+          readingHistory(b, undefined, histories.get(b.id) || []),
+      })),
       annotations: this.all("annotations"),
       sessions: this.all("sessions"),
       snapshots: this.all("snapshots"),
@@ -260,6 +285,49 @@ export class Store {
             a.note,
           ]);
       }
+    });
+  }
+  enrich(updates: { bookId: string; record: Enrichment; cover?: string }[]) {
+    if (updates.length > 100) throw Error("Enrichment batch exceeds limit");
+    const books = new Map(this.all<Book>("books").map((b) => [b.id, b]));
+    this.transaction(() => {
+      for (const u of updates) {
+        const b = books.get(u.bookId);
+        if (!b) throw Error("Book no longer exists");
+        const record = EnrichmentSchema.parse(u.record);
+        const saved = BookSchema.parse({
+          ...b,
+          enrichment: record,
+          ...(u.cover && !b.cover
+            ? {
+                cover: u.cover,
+                coverSource: "openlibrary",
+                coverAttribution: record.metadata?.pageUrl,
+              }
+            : {}),
+        });
+        this.put("books", saved);
+      }
+    });
+  }
+  group(input: { ids: string[]; split?: boolean }) {
+    if (
+      !Array.isArray(input.ids) ||
+      input.ids.length < 1 ||
+      input.ids.length > 100
+    )
+      throw Error("Invalid book selection");
+    const books = this.all<Book>("books");
+    const selected = books.filter((b) => input.ids.includes(b.id));
+    if (selected.length !== new Set(input.ids).size)
+      throw Error("Book no longer exists");
+    const key = "manual:" + crypto.randomUUID();
+    this.transaction(() => {
+      for (const b of selected)
+        this.put("books", {
+          ...b,
+          groupOverride: input.split ? "separate:" + b.id : key,
+        });
     });
   }
   cover(input: { bookId: string; cover: string; pageUrl: string }) {

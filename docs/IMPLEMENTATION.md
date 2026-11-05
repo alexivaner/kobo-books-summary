@@ -22,7 +22,7 @@ Local Kobo assets and selected unencrypted EPUB covers are preferred. Corrupt/mi
 
 ## Verification
 
-Current local verification: type checking, ESLint and the production build pass. All 40 synthetic unit/integration tests pass; enabling private hardware validation gives 41 passing tests. All 10 Chrome browser tests pass with private hardware validation enabled (the hardware case is skipped by default). Browser tests cover native/KOReader/Kobalt import, repeated imports, reload/offline persistence, bookmarks vs highlights, multilingual notes, knowledge/favorites/topics/reflections, backup/clear/restore, scope filtering, explicit cover requests and offline cover caching, responsive layout/themes, and the second-tab writer lock.
+Current local verification: type checking, ESLint and the production build pass. All 54 synthetic unit/integration tests pass; enabling private hardware validation gives 55 passing tests. All 11 Chrome browser tests pass with private hardware validation enabled (the hardware case is skipped by default). Coverage includes automatic grouped enrichment, cached/resumable work, local covers, metadata provenance, offline persistence, source filtering, notes/reflections, portable restore and the writer lock. The macOS launcher passes a shell syntax check; its system browser/Terminal handoff is user-driven.
 
 A connected Kobo Clara Colour was inspected using safe temporary snapshots. Its native Kobo, KOReader and Kobalt databases and supported sidecars were exercised in private opt-in tests. No private source files, book content, screenshots or reading statistics are included in this repository. Device source databases were never opened by SQLite directly or modified. Schema/version fixtures remain synthetic.
 
@@ -52,3 +52,22 @@ Broader firmware/browser fixtures; explicit edition merge review; streaming impo
 - [KOReader statistics](https://github.com/koreader/koreader/blob/master/plugins/statistics.koplugin/main.lua)
 - [Open Library Covers API](https://openlibrary.org/dev/docs/api/covers)
 - [sql.js](https://sql.js.org/)
+
+## Automatic enrichment and history update
+
+The reading shelf can be enriched automatically after enabling the setting in that browser. The queue requests one deduplicated ISBN/title-author group per request to avoid ranking starvation, and cover IDs share downloads within a run. Source fields are preserved. Results include query identity and matcher version; metadata changes invalidate old results and misses expire after 30 days. Manual retry includes unavailable covers; pending covers resume without another metadata query. Provider errors/rate limiting stop requests and persist a fifteen-minute backoff. A one-minute browser timer resumes eligible work while enabled. Turning the setting off cancels pending network operations. This is a client-side queue, not a scheduled cloud task.
+
+Native last-finished/last-started dates and start counts are imported. Kobalt finished-position markers are retained as undated evidence. Reading history preserves unique source completion dates and finished-state transitions across snapshots, without claiming exact lifetime reads from source starts. History and enrichment are optional validated book payload fields, so existing schema-v1 backups remain readable.
+
+The macOS launcher starts the app without requiring a remembered terminal command. Browser-profile storage remains isolated; migrating from the Codex preview to another browser requires a one-time portable backup/restore.
+
+Automatic matching prefers an exact ISBN, then a unique exact title plus normalized author name at work level when the edition ISBN is absent from the catalog. Queries include title/author alternatives and constrain known authors to reduce unrelated results. Native publisher, language, series and available descriptions are imported as local reader metadata, separately from the optional remote enrichment. Cover fallback diagnostics are accepted in private hardware validation and remain visible to the user.
+
+
+## Public beta preparation — 2026-11-05
+
+Static Next.js export is assembled in root `out`, including the post-build service worker, manifest, WASM and Cloudflare headers. A welcome page and optional Ko-fi links complement the existing root workspace. The storage worker does not require SharedArrayBuffer.
+
+The shelf groups verified same-file and ISBN records, with reversible manual grouping/splitting stored as optional source-book fields. Original annotations, source ids, sessions and history remain intact. Main-card progress comes from the latest dated source; per-reader values remain visible. Times are not combined across group members.
+
+Local validation: production export, TypeScript, ESLint, synthetic unit regressions and browser regressions, including an OPFS library retained across a complete browser-process restart. Open Library browser tests use deterministic mock responses; provider availability and catalog coverage remain external limitations. Physical-device validation is opt-in and separate from these synthetic checks.

@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "NEXT_TELEMETRY_DISABLED=1 next dev apps/web --webpack --hostname 127.0.0.1",
     "build": "NEXT_TELEMETRY_DISABLED=1 next build apps/web --webpack && node scripts/precache.mjs",
-    "start": "NEXT_TELEMETRY_DISABLED=1 next start apps/web --hostname 127.0.0.1",
+    "start": "node scripts/serve.mjs",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",

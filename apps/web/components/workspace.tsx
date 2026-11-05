@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import {
   BookOpen,
   LayoutDashboard,
@@ -49,6 +49,12 @@ import { call, initialize, download, readFiles } from "../lib/client";
 import Activity from "./activity";
 import Modal from "./modal";
 import CoverLookup from "./cover-lookup";
+import AutomaticEnrichment from "./automatic-enrichment";
+import { BookHistory, EnrichedMetadata } from "./book-history";
+import { readingHistoryLabel } from "../../../packages/core/history";
+import type { Update } from "../../../packages/enrichment";
+import { SUPPORT_URL } from "../lib/links";
+import { groupBooks } from "../../../packages/core/grouping";
 const nav = [
   { id: "dashboard", label: "Overview", icon: LayoutDashboard },
   { id: "library", label: "My library", icon: LibraryIcon },
@@ -122,6 +128,7 @@ function Empty({
 export default function Workspace() {
   const [storedData, setData] = useState<Library>(emptyLibrary),
     [includeStore, setIncludeStore] = useState(false),
+    [autoEnrichment, setAutoEnrichment] = useState(false),
     [coverTarget, setCoverTarget] = useState<Book | null>(null),
     [page, setPage] = useState<Page>("dashboard"),
     [bookId, setBookId] = useState<string | null>(null),
@@ -149,9 +156,38 @@ export default function Workspace() {
     [knowledgeLimit, setKnowledgeLimit] = useState(40),
     [libraryLimit, setLibraryLimit] = useState(48),
     [storageEstimate, setStorageEstimate] = useState("Checking…");
-  const data = useMemo(
+  const [combineTarget, setCombineTarget] = useState("");
+  const sourceData = useMemo(
     () => readingLibrary(storedData, includeStore),
     [storedData, includeStore],
+  );
+  const groups = useMemo(
+    () => groupBooks(sourceData.books),
+    [sourceData.books],
+  );
+  const data = useMemo(
+    () => ({ ...sourceData, books: groups.map((g) => g.book) }),
+    [sourceData, groups],
+  );
+  const membersFor = useCallback(
+    (id: string) =>
+      groups.find((g) => g.members.some((b) => b.id === id))?.members || [],
+    [groups],
+  );
+  const saveEnrichment = useCallback(
+    async (updates: Update[]) => {
+      const groups = groupBooks(storedData.books.filter(isReadingBook));
+      const expanded = updates.flatMap((u) =>
+        (
+          groups.find((g) => g.members.some((b) => b.id === u.bookId))
+            ?.members || []
+        ).map((b) => ({ ...u, bookId: b.id })),
+      );
+      // The store limits mutations to 100 records. Keep large libraries bounded.
+      for (let i = 0; i < expanded.length; i += 100)
+        setData(await call<Library>("enrich", expanded.slice(i, i + 100)));
+    },
+    [storedData.books],
   );
   const fileRef = useRef<HTMLInputElement>(null),
     folderRef = useRef<HTMLInputElement>(null),
@@ -168,6 +204,7 @@ export default function Workspace() {
         setBusy("");
       });
     setIncludeStore(localStorage.getItem("kobo-include-store") === "true");
+    setAutoEnrichment(localStorage.getItem("kobo-auto-enrichment") === "true");
     const saved = localStorage.getItem("kobo-theme") || "light";
     setTheme(saved);
     document.documentElement.dataset.theme = saved;
@@ -242,16 +279,26 @@ export default function Workspace() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
   const stats = useMemo(() => analytics(data), [data]);
-  const activeBook = data.books.find((b) => b.id === bookId);
+  const activeGroup = groups.find((g) =>
+    g.members.some((b) => b.id === bookId),
+  );
+  const activeBook = activeGroup?.book;
+  const activeIds = new Set(activeGroup?.members.map((b) => b.id) || []);
   const knowledgeMap = new Map(data.knowledge.map((k) => [k.id, k]));
   const filteredBooks = useMemo(
     () =>
       data.books
         .filter(
           (b) =>
-            (status === "all" || b.status === status) &&
-            (source === "all" || b.source === source) &&
-            `${b.title} ${b.author} ${b.collections.join(" ")}`
+            (status === "all" ||
+              b.status === status ||
+              (status === "ever-finished" && b.readingHistory?.everFinished) ||
+              (status === "rereading" &&
+                b.readingHistory?.rereadingEvidence &&
+                b.readingHistory.rereadingEvidence !== "none")) &&
+            (source === "all" ||
+              membersFor(b.id).some((m) => m.source === source)) &&
+            `${b.title} ${b.author} ${b.collections.join(" ")} ${b.enrichment?.metadata?.authors.join(" ") || ""} ${b.enrichment?.metadata?.subjects.join(" ") || ""}`
               .normalize("NFKC")
               .toLocaleLowerCase()
               .includes(query.normalize("NFKC").toLocaleLowerCase()),
@@ -263,13 +310,13 @@ export default function Workspace() {
               ? (b.progress ?? -1) - (a.progress ?? -1)
               : (b.lastRead || "").localeCompare(a.lastRead || ""),
         ),
-    [data.books, status, source, query, sort],
+    [data.books, status, source, query, sort, membersFor],
   );
   const annotations = searchAnnotations(
     data.annotations.filter(
       (a) =>
         (includeArchived || !a.sourceDeleted) &&
-        (!activeBook || a.bookId === activeBook.id) &&
+        (!activeBook || activeIds.has(a.bookId)) &&
         (source === "all" || a.source === source) &&
         (!favorites || knowledgeMap.get(a.id)?.favorite) &&
         (tag === "all" || knowledgeMap.get(a.id)?.tags.includes(tag)),
@@ -431,7 +478,7 @@ export default function Workspace() {
     localStorage.setItem("kobo-theme", next);
   }
   function annotationCard(a: Annotation) {
-    const book = data.books.find((b) => b.id === a.bookId),
+    const book = sourceData.books.find((b) => b.id === a.bookId),
       k = knowledgeMap.get(a.id);
     return (
       <article className="annotation" key={a.id}>
@@ -513,11 +560,17 @@ export default function Workspace() {
         <div className="book-meta">
           <div className="book-meta-top">
             <span className="source">
-              {b.source === "kobalt"
-                ? "Kobalt"
-                : b.source === "kobo"
-                  ? "Kobo"
-                  : "KOReader"}
+              {[
+                ...new Set(
+                  membersFor(b.id).map((m) =>
+                    m.source === "koreader"
+                      ? "KOReader"
+                      : m.source === "kobalt"
+                        ? "Kobalt"
+                        : "Kobo",
+                  ),
+                ),
+              ].join(" · ")}
             </span>
             {b.status === "finished" && <Check size={13} />}
           </div>
@@ -528,13 +581,16 @@ export default function Workspace() {
           </div>
           <div className="book-progress">
             <span>
-              {b.status === "unread"
-                ? "Not started"
-                : b.status === "finished"
-                  ? "Finished"
-                  : b.status === "unknown"
-                    ? "Status not recorded"
-                    : "In progress"}
+              {b.readingHistory?.rereadingEvidence &&
+              b.readingHistory.rereadingEvidence !== "none"
+                ? readingHistoryLabel(b)
+                : b.status === "unread"
+                  ? "Not started"
+                  : b.status === "finished"
+                    ? "Finished"
+                    : b.status === "unknown"
+                      ? "Status not recorded"
+                      : "In progress"}
             </span>
             <span>
               {b.progress === null ? "—" : Math.round(b.progress) + "%"}
@@ -586,6 +642,17 @@ export default function Workspace() {
           ))}
         </nav>
         <div className="sidebar-bottom">
+          <a className="nav-item" href="/welcome/">
+            About this project ↗
+          </a>
+          <a
+            className="nav-item"
+            href={SUPPORT_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <Heart size={17} /> Support Development ↗
+          </a>
           <div className="privacy-card">
             <span className="privacy-icon">
               <ShieldCheck size={19} />
@@ -642,6 +709,19 @@ export default function Workspace() {
           </div>
         </header>
         <main id="main-content">
+          {ready && (
+            <AutomaticEnrichment
+              books={storedData.books}
+              enabled={autoEnrichment}
+              onToggle={(v) => {
+                setAutoEnrichment(v);
+                localStorage.setItem("kobo-auto-enrichment", String(v));
+              }}
+              onSave={saveEnrichment}
+              compact={page !== "settings"}
+              onManage={() => navigate("settings")}
+            />
+          )}
           {includeStore && (
             <div className="banner">
               Store records are included in this view and its statistics.{" "}
@@ -719,9 +799,8 @@ export default function Workspace() {
                     <span>
                       <Quote size={15} />
                       {
-                        data.annotations.filter(
-                          (a) => a.bookId === activeBook.id,
-                        ).length
+                        data.annotations.filter((a) => activeIds.has(a.bookId))
+                          .length
                       }{" "}
                       annotations
                     </span>
@@ -749,11 +828,11 @@ export default function Workspace() {
                           `${activeBook.title.replaceAll("/", "-")}.md`,
                           markdown(
                             activeBook,
-                            data.annotations.filter(
-                              (a) => a.bookId === activeBook.id,
+                            data.annotations.filter((a) =>
+                              activeIds.has(a.bookId),
                             ),
-                            data.reflections.filter(
-                              (r) => r.bookId === activeBook.id,
+                            data.reflections.filter((r) =>
+                              activeIds.has(r.bookId),
                             ),
                           ),
                           "text/markdown",
@@ -771,11 +850,11 @@ export default function Workspace() {
                           JSON.stringify(
                             {
                               book: activeBook,
-                              annotations: data.annotations.filter(
-                                (a) => a.bookId === activeBook.id,
+                              annotations: data.annotations.filter((a) =>
+                                activeIds.has(a.bookId),
                               ),
-                              reflections: data.reflections.filter(
-                                (r) => r.bookId === activeBook.id,
+                              reflections: data.reflections.filter((r) =>
+                                activeIds.has(r.bookId),
                               ),
                             },
                             null,
@@ -788,6 +867,84 @@ export default function Workspace() {
                     </button>
                   </div>
                 </div>
+              </section>
+              <section className="panel" aria-label="Reader sources">
+                <h2>Reader sources</h2>
+                <p className="muted">
+                  One shelf entry; original progress, history and annotations
+                  remain separate. The card uses the latest dated source.
+                  Reading times can overlap.
+                </p>
+                {activeGroup?.members.map((b) => (
+                  <div className="history-row" key={b.id}>
+                    <div>
+                      <strong>
+                        {b.source} · {b.title}
+                      </strong>
+                      <p>
+                        {b.progress === null
+                          ? "Progress unavailable"
+                          : Math.round(b.progress) + "%"}{" "}
+                        · {b.status} · Last read: {date(b.lastRead)}
+                      </p>
+                      <BookHistory book={b} />
+                    </div>
+                  </div>
+                ))}
+                {(activeGroup?.members.length || 0) > 1 && (
+                  <button
+                    className="secondary"
+                    onClick={() =>
+                      mutate(
+                        "group",
+                        { ids: [...activeIds], split: true },
+                        "Sources separated; all original records retained.",
+                      )
+                    }
+                  >
+                    Keep sources separate
+                  </button>
+                )}
+                <label>
+                  Combine with another shelf entry
+                  <select
+                    aria-label="Combine with another shelf entry"
+                    value={combineTarget}
+                    onChange={(e) => setCombineTarget(e.target.value)}
+                  >
+                    <option value="">Choose the same book / edition…</option>
+                    {data.books
+                      .filter((b) => !activeIds.has(b.id))
+                      .map((b) => (
+                        <option key={b.id} value={b.id}>
+                          {b.title} · {b.author} · {b.source}
+                        </option>
+                      ))}
+                  </select>
+                </label>
+                <p className="muted">
+                  Confirm the same edition and language before combining. You
+                  can separate sources again.
+                </p>
+                <button
+                  className="secondary"
+                  disabled={!combineTarget || disabled}
+                  onClick={() => {
+                    mutate(
+                      "group",
+                      {
+                        ids: [
+                          ...activeIds,
+                          ...membersFor(combineTarget).map((b) => b.id),
+                        ],
+                      },
+                      "Combined shelf entries; source data preserved.",
+                    );
+                    setCombineTarget("");
+                  }}
+                >
+                  Combine selected book
+                </button>
               </section>
               {activeBook.coverSource === "openlibrary" && (
                 <p className="muted">
@@ -864,7 +1021,7 @@ export default function Workspace() {
                       Save reflection
                     </button>
                     {data.reflections
-                      .filter((r) => r.bookId === activeBook.id)
+                      .filter((r) => activeIds.has(r.bookId))
                       .map((r) => (
                         <div className="reflection" key={r.id}>
                           <p>{r.text}</p>
@@ -872,6 +1029,10 @@ export default function Workspace() {
                         </div>
                       ))}
                   </section>
+                  {(activeGroup?.members.length || 0) === 1 && (
+                    <BookHistory book={activeBook} />
+                  )}
+                  <EnrichedMetadata book={activeBook} />
                   <section className="panel timeline">
                     <h2>Reading timeline</h2>
                     {activeBook.lastRead && (
@@ -894,16 +1055,14 @@ export default function Workspace() {
                     )}
                     {!activeBook.lastRead &&
                       !activeBook.finishedAt &&
-                      !data.sessions.some(
-                        (s) => s.bookId === activeBook.id,
-                      ) && (
+                      !data.sessions.some((s) => activeIds.has(s.bookId)) && (
                         <p className="muted">
                           No dated reading activity is available for this
                           source.
                         </p>
                       )}
                     {data.sessions
-                      .filter((s) => s.bookId === activeBook.id)
+                      .filter((s) => activeIds.has(s.bookId))
                       .slice(-5)
                       .map((s) => (
                         <div key={s.id}>
@@ -1004,7 +1163,7 @@ export default function Workspace() {
                         label: "Books in your library",
                         value: stats.total,
                         icon: BookOpen,
-                        detail: `${stats.finished} finished · ${stats.reading} in progress`,
+                        detail: `${stats.everFinished} finished before · ${stats.rereading} rereading`,
                       },
                       {
                         label: "Highlights collected",
@@ -1154,14 +1313,21 @@ export default function Workspace() {
                       </div>
                     )}
                   </section>
-                  {data.books.some((b) => b.status === "finished") && (
+                  {data.books.some(
+                    (b) =>
+                      b.readingHistory?.everFinished || b.status === "finished",
+                  ) && (
                     <section>
                       <div className="section-heading">
-                        <h2>Recently finished</h2>
+                        <h2>Finished at least once</h2>
                       </div>
                       <div className="book-grid">
                         {data.books
-                          .filter((b) => b.status === "finished")
+                          .filter(
+                            (b) =>
+                              b.readingHistory?.everFinished ||
+                              b.status === "finished",
+                          )
                           .sort((a, b) =>
                             (b.finishedAt || "").localeCompare(
                               a.finishedAt || "",
@@ -1214,6 +1380,8 @@ export default function Workspace() {
                       <option value="finished">Finished</option>
                       <option value="unread">Not started</option>
                       <option value="unknown">Status not recorded</option>
+                      <option value="ever-finished">Ever finished</option>
+                      <option value="rereading">Rereading</option>
                     </select>
                     <select
                       aria-label="Reader source"
@@ -1526,6 +1694,13 @@ export default function Workspace() {
                             Select source files
                           </button>
                         </div>
+                        <button
+                          className="text-link"
+                          disabled={disabled}
+                          onClick={() => folderRef.current?.click()}
+                        >
+                          Use standard folder picker
+                        </button>
                         <small className="muted">
                           Read-only access. No files on your Kobo are changed.
                         </small>
@@ -1939,9 +2114,10 @@ export default function Workspace() {
                         </p>
                       </div>
                       <p className="muted">
-                        AI and cloud sync are future extensions. External cover
-                        lookup runs only when you choose it for a book; it
-                        shares selected book metadata with Open Library.
+                        AI and cloud sync are future extensions. Manual cover
+                        lookup and enabled automatic enrichment share book
+                        metadata with Open Library. Quotes and notes stay
+                        private.
                       </p>
                     </section>
                     <section className="panel danger-panel">

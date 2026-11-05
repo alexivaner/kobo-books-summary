@@ -6,7 +6,12 @@ import {
   attachCovers,
   type InputFile,
 } from "../../../packages/importers";
-import type { Knowledge, Preview, Reflection } from "../../../packages/core";
+import type {
+  Knowledge,
+  Preview,
+  Reflection,
+  Enrichment,
+} from "../../../packages/core";
 postMessage({ asset: self.location.href });
 let store: Store;
 let storage = "IndexedDB";
@@ -116,6 +121,12 @@ async function request(m: { type: string; payload: unknown; id: number }) {
     else if (m.type === "restore") store.restore(m.payload);
     else if (m.type === "knowledge") store.knowledge(m.payload as Knowledge);
     else if (m.type === "reflection") store.reflect(m.payload as Reflection);
+    else if (m.type === "enrich")
+      store.enrich(
+        m.payload as { bookId: string; record: Enrichment; cover?: string }[],
+      );
+    else if (m.type === "group")
+      store.group(m.payload as { ids: string[]; split?: boolean });
     else if (m.type === "cover")
       store.cover(
         m.payload as { bookId: string; cover: string; pageUrl: string },

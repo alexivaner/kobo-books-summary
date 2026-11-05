@@ -189,9 +189,11 @@ test("directory fallback discovers native and KOReader files", async ({
 }) => {
   await page.goto("/#import");
   await expect(page.getByText("Opening your local library…")).toBeHidden();
+  const folderChooser = page.waitForEvent("filechooser");
   await page
-    .getByLabel("Select Kobo directory", { exact: true })
-    .setInputFiles(path.resolve("fixtures/generated"));
+    .getByRole("button", { name: "Use standard folder picker", exact: true })
+    .click();
+  await (await folderChooser).setFiles(path.resolve("fixtures/generated"));
   await expect(
     page.getByRole("region", { name: "Import preview" }),
   ).toContainText("Kobalt");
@@ -355,4 +357,81 @@ test("Open Library lookup is explicit and chosen cover persists offline", async 
     page.getByRole("img", { name: "The Quiet Atlas cover", exact: true }),
   ).toBeVisible();
   expect(requests).toBe(2);
+});
+
+test("automatic enrichment batches the reading shelf, persists metadata and caches covers", async ({
+  page,
+  context,
+}) => {
+  let queries = 0,
+    images = 0;
+  await page.route("https://openlibrary.org/search.json?**", async (route) => {
+    queries++;
+    const u = new URL(route.request().url());
+    expect(u.searchParams.get("q")).not.toContain("Synthetic Store Preview");
+    expect(u.searchParams.get("q")).not.toContain("Synthetic Catalog Item");
+    await route.fulfill({
+      json: {
+        docs: [
+          {
+            key: "/works/OL123W",
+            title: "The Quiet Atlas",
+            author_name: ["Alex Morgan"],
+            cover_i: 123,
+            first_publish_year: 2018,
+            language: ["eng"],
+            subject: ["Attention"],
+          },
+          {
+            key: "/works/OL124W",
+            title: "Small Observations",
+            author_name: ["Robin Lane"],
+            cover_i: 124,
+            first_publish_year: 2020,
+          },
+        ],
+      },
+    });
+  });
+  await page.route("https://covers.openlibrary.org/**", async (route) => {
+    images++;
+    await route.fulfill({
+      contentType: "image/png",
+      body: Buffer.from(
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGNwzXb9DwAD4wH1Tj84LgAAAABJRU5ErkJggg==",
+        "base64",
+      ),
+    });
+  });
+  await page.goto("/");
+  await expect(page.getByText("Opening your local library…")).toBeHidden();
+  await importFixture(page);
+  expect(queries).toBe(0);
+  await page.getByRole("button", { name: "Settings", exact: true }).click();
+  await page
+    .getByLabel("Enable automatic covers and metadata", { exact: true })
+    .check();
+  await expect(
+    page.getByText("2 cached/local covers", { exact: true }),
+  ).toBeVisible({ timeout: 20000 });
+  expect(queries).toBe(2);
+  expect(images).toBe(2);
+  await page.reload();
+  await expect(
+    page.getByText("2 metadata matches", { exact: true }),
+  ).toBeVisible();
+  expect(queries).toBe(2);
+  await page.getByRole("button", { name: "My library", exact: true }).click();
+  await page
+    .getByRole("heading", { name: "The Quiet Atlas", exact: true })
+    .click();
+  await expect(
+    page.getByRole("region", { name: "Additional book metadata" }),
+  ).toContainText("2018");
+  await context.setOffline(true);
+  await page.reload();
+  await expect(
+    page.getByRole("img", { name: "The Quiet Atlas cover", exact: true }),
+  ).toBeVisible();
+  expect(queries).toBe(2);
 });
