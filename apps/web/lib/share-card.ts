@@ -185,7 +185,9 @@ export async function createShareCard(
   c.fillText(
     stats.period.year === null
       ? "Imported book totals · coverage may be incomplete"
-      : "Timed sessions only · some activity has no recorded duration",
+      : stats.unallocatedSeconds > 0
+        ? "Incomplete time history · dated sessions only"
+        : "Timed sessions only · some activity has no recorded duration",
     72,
     1280,
   );

@@ -80,6 +80,8 @@ it("keeps undated book totals out of annual and monthly hours, while counting na
   expect(all.activeDays).toBe(3);
   const year = readingStatistics(library, { year: 2026, month: null });
   expect(year.seconds).toBe(600);
+  expect(year.unallocatedSeconds).toBe(6600);
+  expect(year.rows[0].lifetimeSeconds).toBe(7200);
   expect(year.sessions).toBe(1);
   expect(year.activeDays).toBe(2);
   expect(year.books).toBe(1);
@@ -88,6 +90,7 @@ it("keeps undated book totals out of annual and monthly hours, while counting na
   ).toBeNull();
   const native = readingStatistics(library, { year: 2026, month: 10 }, "kobo");
   expect(native.seconds).toBeNull();
+  expect(native.unallocatedSeconds).toBe(7200);
   expect(native.activeDays).toBe(1);
   expect(year.years).toEqual([2026, 2025]);
 });
@@ -96,6 +99,35 @@ it("counts only dated completions inside a period and preserves undated finishes
   expect(readingStatistics(lib, { year: null, month: null }).finished).toBe(2);
   expect(readingStatistics(lib, { year: 2026, month: null }).finished).toBe(0);
   expect(readingStatistics(lib, { year: 2025, month: 12 }).finished).toBe(1);
+});
+it("keeps a lifetime book counter separate from another book's short monthly session", () => {
+  const library: Library = {
+    ...emptyLibrary,
+    books: [
+      {
+        ...book("long-book", "kobo"),
+        duration: 53959,
+        durationKind: "recorded",
+      },
+      book("guide", "koreader"),
+    ],
+    sessions: [
+      {
+        ...session("activity", "long-book", "2026-10-20T12:00:00Z", 0),
+        evidence: "reader-event",
+      },
+      session("short", "guide", "2026-10-29T12:00:00Z", 9),
+    ],
+  };
+  const october = readingStatistics(library, { year: 2026, month: 10 });
+  expect(october.seconds).toBe(9);
+  expect(october.unallocatedSeconds).toBe(53959);
+  const long = october.rows.find((r) => r.book.id === "long-book")!;
+  expect(long.seconds).toBeNull();
+  expect(long.lifetimeSeconds).toBe(53959);
+  expect(readingStatistics(library, { year: null, month: null }).seconds).toBe(
+    53968,
+  );
 });
 it("ranks frequency by distinct reading days rather than page-event volume", () => {
   const lib = fixture();
