@@ -53,11 +53,20 @@ export function groupBooks(books: Book[]): BookGroup[] {
     const latest = ordered[0],
       cover = ordered.find((b) => b.cover),
       author = ordered.find((b) => b.author !== "Unknown author"),
+      metadata =
+        ordered.find(
+          (b) =>
+            b.author !== "Unknown author" &&
+            !/\.(?:epub|kepub|pdf)$/i.test(b.title),
+        ) || latest,
       enriched = ordered.find((b) => b.enrichment?.status === "matched");
     return {
       members,
       book: {
         ...latest,
+        title: metadata.title,
+        isbn: ordered.find((b) => validISBN(b.isbn))?.isbn || latest.isbn,
+        readerMetadata: metadata.readerMetadata || latest.readerMetadata,
         author: author?.author || latest.author,
         cover: cover?.cover,
         coverSource: cover?.coverSource,

@@ -176,7 +176,7 @@ export default function Workspace() {
   );
   const saveEnrichment = useCallback(
     async (updates: Update[]) => {
-      const groups = groupBooks(storedData.books);
+      const groups = groupBooks(storedData.books.filter(isReadingBook));
       const expanded = updates.flatMap((u) =>
         (
           groups.find((g) => g.members.some((b) => b.id === u.bookId))
