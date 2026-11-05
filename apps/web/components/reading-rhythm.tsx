@@ -18,6 +18,7 @@ import {
   bookTime,
 } from "../../../packages/analytics/rhythm";
 import { groupBooks } from "../../../packages/core/grouping";
+import { readingStatistics } from "../../../packages/analytics/statistics";
 const calendarTime = (seconds: number) => {
   if (seconds > 0 && seconds < 60) return "<1m";
   const minutes = Math.round(seconds / 60);
@@ -58,14 +59,16 @@ export default function ReadingRhythm({
     const key = dayKey(s.start)!;
     days.set(key, [...(days.get(key) || []), s]);
   }
-  const total = combinedTime({ books: library.books, sessions: inMonth });
   const timed = inMonth.filter(isTimed);
   const allTime = bookTime(library);
-  const seconds = total.seconds,
-    countBooks = new Set(
-      inMonth.map((s) => books.get(s.bookId)?.book.id || s.bookId),
-    ).size;
+  const countBooks = new Set(
+    inMonth.map((s) => books.get(s.bookId)?.book.id || s.bookId),
+  ).size;
   const [y, m] = month.split("-").map(Number);
+  const stats = readingStatistics(library, { year: y, month: m }, source);
+  const lifetimeSeconds = stats.rows.some((r) => r.lifetimeSeconds !== null)
+    ? stats.rows.reduce((n, r) => n + (r.lifetimeSeconds || 0), 0)
+    : null;
   const first = new Date(y, m - 1, 1),
     offset = (first.getDay() + 6) % 7,
     count = new Date(y, m, 0).getDate();
@@ -161,21 +164,42 @@ export default function ReadingRhythm({
       <section className="rhythm-summary" aria-label="Monthly reading summary">
         {[
           [
-            "Recorded time",
-            timed.length
-              ? `${total.overlaps ? "At least " : ""}${duration(seconds)}`
-              : "Not recorded",
+            "Monthly reading time",
+            stats.seconds === null
+              ? "Not recorded"
+              : stats.incompleteTime
+                ? "Incomplete"
+                : `${stats.minimum ? "At least " : ""}${duration(stats.seconds)}`,
+            `${timed.length ? duration(stats.seconds!) : "No time"} in ${timed.length} imported timed ${timed.length === 1 ? "session" : "sessions"}`,
           ],
           ["Active days", days.size],
-          ["Timed sessions", timed.length],
+          [
+            "Book totals · all time",
+            lifetimeSeconds === null
+              ? "Not recorded"
+              : duration(lifetimeSeconds),
+            "For books active this month",
+          ],
           ["Books", countBooks],
-        ].map(([label, value]) => (
+        ].map(([label, value, detail]) => (
           <div className="panel" key={label}>
             <span>{label}</span>
             <strong>{value}</strong>
+            {detail && <small className="time-coverage-detail">{detail}</small>}
           </div>
         ))}
       </section>
+      {stats.incompleteTime && (
+        <p
+          className="rhythm-evidence"
+          role="note"
+          aria-label="Monthly time coverage"
+        >
+          Your monthly total is unavailable because some reading activity has no
+          timed session record. Book totals include hours from all dates and
+          cannot be divided into days or months.
+        </p>
+      )}
       {multiple && (
         <p className="rhythm-evidence">
           Overlapping records for the same book use the largest recorded

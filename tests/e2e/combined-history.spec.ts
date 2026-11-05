@@ -89,6 +89,11 @@ test("one calendar combines native Kobo history, Kobalt sessions and KOReader in
   await expect(selected).toContainText("Kobalt");
   await expect(selected).toContainText("KOReader");
   await expect(selected).toContainText("9 sec");
+  const monthly = page.getByRole("region", { name: "Monthly reading summary" });
+  await expect(monthly).toContainText("Monthly reading time");
+  await expect(monthly).toContainText("Incomplete");
+  await expect(monthly).toContainText("Book totals · all time");
+  await expect(page.getByLabel("Monthly time coverage")).toBeVisible();
   await page.getByLabel("Rhythm reader").selectOption("kobo");
   await expect(
     page.getByRole("region", { name: "Monthly reading summary" }),
