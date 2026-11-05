@@ -16,7 +16,7 @@ Formerly Kobo Books Summary. A local-first reading knowledge platform for **Kobo
 - Track **ever finished** and recorded completion dates separately from current progress. Label rereading as observed/inferred, preserve known history across imports, and distinguish start counters from reread counts.
 - Export book notes to Markdown/JSON, and back up or restore the complete local library.
 - Browse **Personal notes** separately: reader notes, standalone notes, and your own saved reflections, with search and book links.
-- Explore **Reading rhythm** by month and day, including session times, books and reader filters. Only dated source sessions populate the calendar; aggregate book totals do not invent daily history.
+- Explore **Reading rhythm** across native Kobo, Kobalt and KOReader: measured sessions, native event dates, last-read evidence, source coverage and conservative combined time. Aggregate book counters stay separate from daily durations. [How reading history is combined](docs/READING_HISTORY.md).
 - Readable light/dark interface with larger body text and controls, and offline browsing after the production app has loaded.
 
 ## Public beta

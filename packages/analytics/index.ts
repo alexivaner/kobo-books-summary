@@ -1,37 +1,43 @@
 import type { Library } from "../core";
-import { readingDays } from "./rhythm";
+import { readingDays, bookTime, combinedTime } from "./rhythm";
+import { groupBooks } from "../core/grouping";
 import { personalNoteText } from "../knowledge";
 export function analytics(library: Library) {
   const active = library.annotations.filter((a) => !a.sourceDeleted);
-  const durations = library.books
-    .map((b) => b.duration)
-    .filter((d): d is number => d !== null);
+  const groups = groupBooks(library.books).map((g) => g.book);
+  const totalTime = bookTime(library);
   const activity = new Map(
-    [...readingDays(library)].map(([day, value]) => [day, value.seconds]),
+    [...readingDays(library)].map(([day, value]) => [
+      day,
+      combinedTime({ books: library.books, sessions: value.sessions }).seconds,
+    ]),
   );
   return {
-    total: library.books.length,
-    everFinished: library.books.filter(
+    total: groups.length,
+    everFinished: groups.filter(
       (b) => b.readingHistory?.everFinished || b.status === "finished",
     ).length,
-    rereading: library.books.filter(
+    rereading: groups.filter(
       (b) =>
         b.readingHistory?.rereadingEvidence &&
         b.readingHistory.rereadingEvidence !== "none",
     ).length,
-    finished: library.books.filter((b) => b.status === "finished").length,
-    reading: library.books.filter((b) => b.status === "reading").length,
+    finished: groups.filter((b) => b.status === "finished").length,
+    reading: groups.filter((b) => b.status === "reading").length,
     highlights: active.filter(
       (a) => a.text && a.kind !== "bookmark" && a.kind !== "note",
     ).length,
     notes: active.filter((a) => !!personalNoteText(a)).length,
-    duration: durations.length ? durations.reduce((a, b) => a + b, 0) : null,
+    duration: totalTime.seconds,
+    durationIsMinimum: totalTime.minimum,
     activity,
   };
 }
-export const duration = (n: number | null) =>
-  n === null
-    ? "Unavailable"
-    : n < 3600
-      ? `${Math.round(n / 60)} min`
-      : `${Math.floor(n / 3600)}h ${Math.round((n % 3600) / 60)}m`;
+export const duration = (n: number | null) => {
+  if (n === null) return "Unavailable";
+  if (n > 0 && n < 60) return `${Math.max(1, Math.round(n))} sec`;
+  const minutes = Math.round(n / 60);
+  return minutes < 60
+    ? `${minutes} min`
+    : `${Math.floor(minutes / 60)}h ${minutes % 60}m`;
+};

@@ -7,6 +7,7 @@ import {
   stableId,
   normalizePath,
 } from "../core";
+import { importKoboHistory, koboDate } from "./kobo-history";
 import { isResourceFork } from "./cover-plan";
 import { importKobalt } from "./kobalt";
 import { parseLua } from "./lua";
@@ -102,7 +103,7 @@ export function importKobo(db: Database, deviceId: string): Preview {
                 r.IsDownloaded != null &&
                 !truth(r.IsDownloaded) &&
                 !sid.startsWith("file:") &&
-                !iso(r.DateLastRead) &&
+                !koboDate(r.DateLastRead) &&
                 num(r.ReadStatus) === 0 &&
                 progress === 0 &&
                 !(duration && duration > 0)
@@ -125,8 +126,8 @@ export function importKobo(db: Database, deviceId: string): Preview {
             : r.ReadStatus == null && r.___PercentRead == null
               ? "unknown"
               : "unread",
-      lastRead: iso(r.DateLastRead),
-      finishedAt: iso(r.LastTimeFinishedReading),
+      lastRead: koboDate(r.DateLastRead),
+      finishedAt: koboDate(r.LastTimeFinishedReading),
       readerMetadata: {
         source: "kobo",
         publisher: s(r.Publisher).slice(0, 1000) || undefined,
@@ -142,7 +143,7 @@ export function importKobo(db: Database, deviceId: string): Preview {
                 .slice(0, 20000) || undefined
             : undefined,
       },
-      lastStartedAt: iso(r.LastTimeStartedReading),
+      lastStartedAt: koboDate(r.LastTimeStartedReading),
       sourceStartCount:
         r.TimesStartedReading == null
           ? undefined
@@ -225,6 +226,7 @@ export function importKobo(db: Database, deviceId: string): Preview {
     p.diagnostics.push(
       `${unlinked} annotations have no book identifier and could not be linked.`,
     );
+  importKoboHistory(db, p);
   return p;
 }
 export function importStats(db: Database, deviceId: string): Preview {
@@ -243,6 +245,9 @@ export function importStats(db: Database, deviceId: string): Preview {
     const duration = nullableDuration(r.total_read_time);
     const book = {
       ...base("koreader", sid, deviceId),
+      koreaderPartialMd5: /^[a-f0-9]{32}$/i.test(s(r.md5))
+        ? s(r.md5).toLowerCase()
+        : undefined,
       title: s(r.title) || "Untitled",
       author: s(r.authors) || "Unknown author",
       lastRead: iso(r.last_open),
@@ -261,6 +266,7 @@ export function importStats(db: Database, deviceId: string): Preview {
         bookId: book.id,
         start,
         duration: num(x.duration),
+        end: new Date(Date.parse(start) + num(x.duration) * 1000).toISOString(),
         kind: "recorded",
         page: num(x.page),
       });
@@ -292,6 +298,9 @@ export function importSidecar(
   const book = {
     ...base("koreader", sid, deviceId),
     path: sourcePath,
+    koreaderPartialMd5: /^[a-f0-9]{32}$/i.test(s(data.partial_md5_checksum))
+      ? s(data.partial_md5_checksum).toLowerCase()
+      : undefined,
     title: s(props.title) || sourcePath.split("/").pop() || "Untitled",
     author: s(props.authors) || "Unknown author",
     progress:
@@ -479,8 +488,41 @@ export async function discover(
       );
     }
   }
+  // KOReader statistics and sidecars share the partial-file MD5. Resolve only
+  // a unique same-device path, retaining both source ids and all annotations.
+  const checksumPaths = new Map<string, Set<string>>();
+  for (const book of p.books)
+    if (book.source === "koreader" && book.koreaderPartialMd5 && book.path) {
+      const paths =
+        checksumPaths.get(book.koreaderPartialMd5) || new Set<string>();
+      paths.add(book.path);
+      checksumPaths.set(book.koreaderPartialMd5, paths);
+    }
+  for (const book of p.books)
+    if (book.source === "koreader" && !book.path && book.koreaderPartialMd5) {
+      const paths = checksumPaths.get(book.koreaderPartialMd5);
+      if (paths?.size === 1) book.path = [...paths][0];
+    }
   attachCovers(p, files);
-  p.books = [...new Map(p.books.map((b) => [b.id, b])).values()];
+  const mergedBooks = new Map<string, Book>();
+  for (const book of p.books) {
+    const old = mergedBooks.get(book.id);
+    if (!old) {
+      mergedBooks.set(book.id, book);
+      continue;
+    }
+    const latest = (book.lastRead || "") >= (old.lastRead || "") ? book : old;
+    const totals = [old.duration, book.duration].filter(
+      (v): v is number => v !== null,
+    );
+    mergedBooks.set(book.id, {
+      ...latest,
+      cover: latest.cover || old.cover || book.cover,
+      duration: totals.length ? Math.max(...totals) : null,
+    });
+  }
+  p.books = [...mergedBooks.values()];
+  p.sessions = [...new Map(p.sessions.map((s) => [s.id, s])).values()];
   p.annotations = [...new Map(p.annotations.map((a) => [a.id, a])).values()];
   p.sources = [...new Set(p.sources)];
   if (!p.sources.length)

@@ -7,6 +7,7 @@ import {
   TooltipComponent,
   VisualMapComponent,
 } from "echarts/components";
+import { duration } from "../../../packages/analytics";
 import { dayKey } from "../../../packages/analytics/rhythm";
 import { CanvasRenderer } from "echarts/renderers";
 echarts.use([
@@ -39,9 +40,10 @@ export default function Activity({ entries }: { entries: [string, number][] }) {
           borderColor: muted,
           textStyle: { color: ink, fontSize: 14 },
           formatter: (p: unknown) => {
-            const d = (p as { data?: [string, number] }).data;
+            const d = (p as { data?: { value?: [string, number] } }).data
+              ?.value;
             return d
-              ? `${d[0]} · ${Math.round(d[1] / 60)} recorded minutes`
+              ? `${d[0]} · ${d[1] > 0 ? duration(d[1]) + " recorded" : "Reading activity; duration unavailable"}`
               : "";
           },
         },
@@ -78,7 +80,16 @@ export default function Activity({ entries }: { entries: [string, number][] }) {
           monthLabel: { color: muted, fontSize: 13 },
         },
         series: [
-          { type: "heatmap", coordinateSystem: "calendar", data: entries },
+          {
+            type: "heatmap",
+            coordinateSystem: "calendar",
+            data: entries.map(([date, seconds]) => ({
+              value: [date, seconds],
+              ...(seconds === 0
+                ? { itemStyle: { color: dark ? "#42623d" : "#bad0a1" } }
+                : {}),
+            })),
+          },
         ],
       });
     };

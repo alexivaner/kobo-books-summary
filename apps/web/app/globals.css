@@ -3592,3 +3592,31 @@ textarea {
 .note-card-meta time {
   font-size: 14px;
 }
+.rhythm-coverage {
+  margin-top: 24px;
+}
+.reader-history-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 24px;
+  margin: 24px 0;
+}
+.reader-history-grid > div {
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.reader-history-grid p {
+  font-size: 14px;
+  color: var(--muted);
+  margin: 8px 0;
+  overflow-wrap: anywhere;
+}
+.reader-history-grid strong {
+  font-size: 16px;
+}
+@media (max-width: 900px) {
+  .reader-history-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

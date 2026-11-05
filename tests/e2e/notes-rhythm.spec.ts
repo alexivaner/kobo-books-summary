@@ -119,7 +119,7 @@ test("reading rhythm exposes recorded days and sessions with reader provenance",
       .evaluate((el) => parseFloat(getComputedStyle(el).fontSize)),
   ).toBeGreaterThanOrEqual(16);
 });
-test("native aggregate reading totals do not invent daily sessions", async ({
+test("native last-read activity does not invent daily durations", async ({
   page,
 }) => {
   await openImport(page);
@@ -130,7 +130,10 @@ test("native aggregate reading totals do not invent daily sessions", async ({
   await page.getByRole("button", { name: "Overview", exact: true }).click();
   await page.getByRole("button", { name: /Reading time/ }).click();
   await expect(
-    page.getByRole("heading", { name: "No dated sessions yet", exact: true }),
-  ).toBeVisible();
-  await expect(page.locator(".calendar-days .has-reading")).toHaveCount(0);
+    page.getByRole("region", { name: "Monthly reading summary" }),
+  ).toContainText("Not recorded");
+  await expect(page.locator(".calendar-days .has-reading")).toHaveCount(1);
+  await expect(
+    page.getByRole("region", { name: "Selected day reading" }),
+  ).toContainText("Last-read timestamp");
 });

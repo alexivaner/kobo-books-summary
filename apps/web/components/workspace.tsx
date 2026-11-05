@@ -47,6 +47,7 @@ import {
 import { markdown } from "../../../packages/export";
 import { call, initialize, download, readFiles } from "../lib/client";
 import Activity from "./activity";
+import { isTimed } from "../../../packages/analytics/rhythm";
 import PersonalNotes from "./personal-notes";
 import ReadingRhythm from "./reading-rhythm";
 import { Brand, BrandMark, BrandArtwork } from "./brand";
@@ -295,7 +296,7 @@ export default function Workspace() {
     setReflection("");
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
-  const stats = useMemo(() => analytics(data), [data]);
+  const stats = useMemo(() => analytics(sourceData), [sourceData]);
   const activeGroup = groups.find((g) =>
     g.members.some((b) => b.id === bookId),
   );
@@ -1013,7 +1014,11 @@ export default function Workspace() {
                         <div key={s.id}>
                           <span className="timeline-dot" />
                           <p>
-                            {duration(s.duration)} recorded interval
+                            {isTimed(s)
+                              ? `${duration(s.duration)} recorded session`
+                              : s.evidence === "last-read"
+                                ? "Last-read evidence"
+                                : "Reading activity · duration unavailable"}
                             <small>{date(s.start)}</small>
                           </p>
                         </div>
@@ -1101,12 +1106,12 @@ export default function Workspace() {
                       },
                       {
                         label: "Reading time",
-                        value: duration(stats.duration),
+                        value: `${stats.durationIsMinimum ? "At least " : ""}${duration(stats.duration)}`,
                         icon: Clock,
                         detail:
                           stats.duration === null
                             ? "Import recorded statistics to begin"
-                            : "Recorded totals · sources may overlap",
+                            : "Conservative totals across readers",
                       },
                     ].map(({ label, value, icon: Icon, detail }) => (
                       <button
@@ -1188,9 +1193,15 @@ export default function Workspace() {
                           {stats.activity.size} days with recorded activity
                         </span>
                         <span className="heat-legend">
-                          Less <i />
-                          <i />
-                          <i /> More
+                          {[...stats.activity.values()].some((v) => v === 0) ? (
+                            "Includes dates without duration"
+                          ) : (
+                            <>
+                              Less <i />
+                              <i />
+                              <i /> More
+                            </>
+                          )}
                         </span>
                       </div>
                       <div className="divider" />
@@ -1695,7 +1706,7 @@ export default function Workspace() {
                             </div>
                             <div>
                               <strong>{preview.sessions.length}</strong>
-                              <span>recorded intervals</span>
+                              <span>reading records</span>
                             </div>
                           </div>
                           <p className="muted">
