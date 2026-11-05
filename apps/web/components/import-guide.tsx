@@ -40,7 +40,7 @@ export default function ImportGuide({
   const heading = useRef<HTMLHeadingElement>(null);
   const mounted = useRef(false);
   useEffect(() => {
-    if (mounted.current) heading.current?.focus({ preventScroll: true });
+    if (mounted.current) heading.current?.focus();
     mounted.current = true;
   }, [active]);
   return (
