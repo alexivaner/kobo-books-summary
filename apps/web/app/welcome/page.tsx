@@ -1,4 +1,5 @@
 import { BookOpen, ShieldCheck, Quote, Library } from "lucide-react";
+import { Brand, BrandArtwork } from "../../components/brand";
 import { appPath } from "../../lib/paths";
 import { SUPPORT_URL, GITHUB_URL } from "../../lib/links";
 export default function Welcome() {
@@ -6,37 +7,39 @@ export default function Welcome() {
     <main className="welcome">
       <nav>
         <a href={appPath("/")} className="brand">
-          <BookOpen /> Kobo Books Summary
+          <Brand />
         </a>
         <a href={GITHUB_URL} target="_blank" rel="noopener noreferrer">
           View on GitHub ↗
         </a>
       </nav>
       <section className="welcome-hero">
-        <span className="eyebrow">A LITTLE SPACE FOR EVERYTHING YOU READ</span>
-        <h1>
-          Your reading,
-          <br />
-          remembered.
-        </h1>
-        <p>
-          Turn your Kobo reading history, highlights, and notes into a beautiful
-          personal knowledge library.
-        </p>
-        <div className="actions">
-          <a className="primary" href={appPath("/")}>
-            Open App →
-          </a>
-          <a
-            className="secondary"
-            href={GITHUB_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            View on GitHub
-          </a>
+        <div className="welcome-hero-copy">
+          <h1>
+            Your reading,
+            <br />
+            remembered.
+          </h1>
+          <p>
+            Your books, highlights, and ideas. One quiet place to make them
+            yours.
+          </p>
+          <div className="actions">
+            <a className="primary" href={appPath("/")}>
+              Open App →
+            </a>
+            <a
+              className="secondary"
+              href={GITHUB_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              View on GitHub
+            </a>
+          </div>
+          <small>Free and open-source. No account required.</small>
         </div>
-        <small>Free and open-source. No account required.</small>
+        <BrandArtwork className="welcome-brand-art" />
       </section>
       <section className="welcome-features">
         {[
