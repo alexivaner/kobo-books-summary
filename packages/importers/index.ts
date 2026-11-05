@@ -126,6 +126,26 @@ export function importKobo(db: Database, deviceId: string): Preview {
               : "unread",
       lastRead: iso(r.DateLastRead),
       finishedAt: iso(r.LastTimeFinishedReading),
+      readerMetadata: {
+        source: "kobo",
+        publisher: s(r.Publisher).slice(0, 1000) || undefined,
+        language: s(r.Language).slice(0, 100) || undefined,
+        series: s(r.Series).slice(0, 2000) || undefined,
+        seriesNumber: s(r.SeriesNumber).slice(0, 100) || undefined,
+        description:
+          truth(r.IsDownloaded) || num(r.ReadStatus) > 0
+            ? s(r.Description)
+                .replace(/<[^>]*>/g, " ")
+                .replace(/&amp;/g, "&")
+                .replace(/\s+/g, " ")
+                .slice(0, 20000) || undefined
+            : undefined,
+      },
+      lastStartedAt: iso(r.LastTimeStartedReading),
+      sourceStartCount:
+        r.TimesStartedReading == null
+          ? undefined
+          : Math.max(0, Math.floor(num(r.TimesStartedReading))),
       duration,
       durationKind: duration === null ? "unavailable" : "recorded",
       collections: shelves
@@ -496,5 +516,12 @@ export function attachCovers(p: Preview, files: InputFile[]): Preview {
       );
     }
   }
+  const localCovers = new Map<string, string>();
+  const coverPath = (path: string) =>
+    normalizePath(path).replace(/^\.kobo\/kepub\//, "");
+  for (const b of p.books)
+    if (b.cover && b.path) localCovers.set(coverPath(b.path), b.cover);
+  for (const b of p.books)
+    if (!b.cover && b.path) b.cover = localCovers.get(coverPath(b.path));
   return p;
 }

@@ -11,7 +11,7 @@ self.addEventListener("install", (event) => {
         caches
           .open(CACHE)
           .then((c) =>
-            c.addAll(["/", "/vendor/sql-wasm.wasm", ...manifest.assets]),
+            c.addAll(["/", "/welcome/", "/vendor/sql-wasm.wasm", ...manifest.assets]),
           ),
       ),
   );
@@ -49,11 +49,11 @@ self.addEventListener("fetch", (event) => {
         .then((response) => {
           if (response.ok) {
             const copy = response.clone();
-            event.waitUntil(caches.open(CACHE).then((c) => c.put("/", copy)));
+            event.waitUntil(caches.open(CACHE).then((c) => c.put(u.pathname, copy)));
           }
           return response;
         })
-        .catch(() => caches.open(CACHE).then((c) => c.match("/"))),
+        .catch(() => caches.open(CACHE).then((c) => c.match(u.pathname))),
     );
     return;
   }

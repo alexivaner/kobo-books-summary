@@ -11,6 +11,14 @@ export function analytics(library: Library) {
   }
   return {
     total: library.books.length,
+    everFinished: library.books.filter(
+      (b) => b.readingHistory?.everFinished || b.status === "finished",
+    ).length,
+    rereading: library.books.filter(
+      (b) =>
+        b.readingHistory?.rereadingEvidence &&
+        b.readingHistory.rereadingEvidence !== "none",
+    ).length,
     finished: library.books.filter((b) => b.status === "finished").length,
     reading: library.books.filter((b) => b.status === "reading").length,
     highlights: active.filter((a) => a.text && a.kind !== "bookmark").length,

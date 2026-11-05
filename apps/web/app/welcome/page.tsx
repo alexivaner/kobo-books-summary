@@ -1,0 +1,93 @@
+import { BookOpen, ShieldCheck, Quote, Library } from "lucide-react";
+import { SUPPORT_URL, GITHUB_URL } from "../../lib/links";
+export default function Welcome() {
+  return (
+    <main className="welcome">
+      <nav>
+        <a href="/" className="brand">
+          <BookOpen /> Kobo Books Summary
+        </a>
+        <a href={GITHUB_URL} target="_blank" rel="noopener noreferrer">
+          View on GitHub ↗
+        </a>
+      </nav>
+      <section className="welcome-hero">
+        <span className="eyebrow">A LITTLE SPACE FOR EVERYTHING YOU READ</span>
+        <h1>
+          Your reading,
+          <br />
+          remembered.
+        </h1>
+        <p>
+          Turn your Kobo reading history, highlights, and notes into a beautiful
+          personal knowledge library.
+        </p>
+        <div className="actions">
+          <a className="primary" href="/">
+            Open App →
+          </a>
+          <a
+            className="secondary"
+            href={GITHUB_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            View on GitHub
+          </a>
+        </div>
+        <small>Free and open-source. No account required.</small>
+      </section>
+      <section className="welcome-features">
+        {[
+          [
+            BookOpen,
+            "One reading home",
+            "Import Kobo, KOReader and Kobalt. Keep books together with every reader’s progress preserved.",
+          ],
+          [
+            Quote,
+            "Keep the good parts",
+            "Explore highlights, personal notes, topics and reflections in your knowledge library.",
+          ],
+          [
+            Library,
+            "See your reading life",
+            "Browse your bookshelf, recorded activity, completion history and reading statistics.",
+          ],
+          [
+            ShieldCheck,
+            "Private by design",
+            "Files are parsed in your browser. Your library stays on your device, with portable backups.",
+          ],
+        ].map(([Icon, title, text]) => (
+          <article className="panel" key={String(title)}>
+            {typeof Icon !== "string" && <Icon size={24} />}
+            <h2>{String(title)}</h2>
+            <p>{String(text)}</p>
+          </article>
+        ))}
+      </section>
+      <footer>
+        <p>
+          Browser storage can be cleared. Back up your library regularly.
+          Optional Open Library lookups share book identifiers only after you
+          enable them.
+        </p>
+        <a href={SUPPORT_URL} target="_blank" rel="noopener noreferrer">
+          Support Development ↗
+        </a>
+        <p>
+          Support this free and open-source project. Donations never unlock or
+          restrict features.
+        </p>
+        <a
+          href="https://github.com/alexivaner/kobo-books-summary/blob/main/PRIVACY.md"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Privacy details
+        </a>
+      </footer>
+    </main>
+  );
+}
