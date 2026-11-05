@@ -47,6 +47,7 @@ import {
 import { markdown } from "../../../packages/export";
 import { call, initialize, download, readFiles } from "../lib/client";
 import Activity from "./activity";
+import { Brand, BrandMark, BrandArtwork } from "./brand";
 import ImportGuide from "./import-guide";
 import type { ImportTask } from "./import-progress";
 import ReaderSources from "./reader-sources";
@@ -484,7 +485,7 @@ export default function Workspace() {
     try {
       const b = await call("backup");
       download(
-        `kobo-library-${new Date().toISOString().slice(0, 10)}.json`,
+        `readmory-library-${new Date().toISOString().slice(0, 10)}.json`,
         JSON.stringify(b, null, 2),
       );
       setNotice("Backup downloaded. Keep it somewhere safe.");
@@ -635,12 +636,7 @@ export default function Workspace() {
       </a>
       <aside className={`sidebar ${mobile ? "open" : ""}`}>
         <button className="brand" onClick={() => navigate("dashboard")}>
-          <span className="brand-mark">
-            <BookOpen size={23} />
-          </span>
-          <span>
-            Kobo<span className="brand-sub">BOOKS SUMMARY</span>
-          </span>
+          <Brand />
         </button>
         <div className="workspace-label">YOUR READING SPACE</div>
         <nav aria-label="Main navigation">
@@ -699,7 +695,10 @@ export default function Workspace() {
             >
               <Menu size={20} />
             </button>
-            <span>My workspace</span>
+            <span className="workspace-crumb">My workspace</span>
+            <span className="mobile-brand">
+              <Brand compact />
+            </span>
             <ChevronRight size={13} />
             <strong>
               {activeBook
@@ -1081,30 +1080,7 @@ export default function Workspace() {
                         <ArrowRight size={16} />
                       </button>
                     </div>
-                    <div className="hero-art" aria-hidden="true">
-                      <div className="art-circle" />
-                      <div className="art-book art-book-one">
-                        <span>
-                          THE ART OF
-                          <br />
-                          <b>
-                            PAYING
-                            <br />
-                            ATTENTION
-                          </b>
-                        </span>
-                        <small>A READER’S COMPANION</small>
-                      </div>
-                      <div className="art-book art-book-two">
-                        <span>
-                          small
-                          <br />
-                          <b>wonders</b>
-                        </span>
-                        <div className="art-leaf" />
-                      </div>
-                      <div className="sparkle">✳</div>
-                    </div>
+                    <BrandArtwork className="dashboard-brand-art" />
                   </section>
                   <section
                     className="stat-grid"
@@ -2017,7 +1993,7 @@ export default function Workspace() {
           )}
           <footer className="page-footer">
             <span>
-              <BookOpen size={14} /> Kobo Books Summary
+              <BrandMark className="footer-brand-mark" /> Readmory
             </span>
           </footer>
         </main>

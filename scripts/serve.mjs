@@ -55,6 +55,6 @@ http
   })
   .listen(Number(process.env.PORT || 3000), "127.0.0.1", () =>
     console.log(
-      `Kobo Books Summary: http://127.0.0.1:${process.env.PORT || 3000}`,
+      `Readmory: http://127.0.0.1:${process.env.PORT || 3000}`,
     ),
   );
