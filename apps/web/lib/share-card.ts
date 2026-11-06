@@ -203,7 +203,7 @@ export async function createShareCard(
     72,
     1280,
   );
-  c.fillText("alexivaner.github.io/kobo-books-summary", 72, 1317);
+  c.fillText("alexivaner.github.io/readmory", 72, 1317);
   return new Promise<Blob>((resolve, reject) =>
     canvas.toBlob(
       (b) => (b ? resolve(b) : reject(Error("Unable to create image."))),

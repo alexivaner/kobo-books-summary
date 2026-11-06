@@ -22,7 +22,7 @@ Formerly Kobo Books Summary. A local-first reading knowledge platform for **Kobo
 
 ## Public beta
 
-[Open the app](https://alexivaner.github.io/kobo-books-summary/) · [About the project](https://alexivaner.github.io/kobo-books-summary/welcome/)
+[Open the app](https://alexivaner.github.io/readmory/) · [About the project](https://alexivaner.github.io/readmory/welcome/)
 
 The public website is hosted on GitHub Pages. Main-branch pushes run checks, verify the deployment paths and publish automatically. Cloudflare Pages static hosting remains supported; see the deployment guide.
 

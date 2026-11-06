@@ -30,13 +30,13 @@ jobs:
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         run: pnpm build
         env:
-          NEXT_PUBLIC_BASE_PATH: /kobo-books-summary
+          NEXT_PUBLIC_BASE_PATH: /readmory
       - name: Verify GitHub Pages paths and offline storage
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         run: pnpm test:e2e tests/e2e/basepath.spec.ts
         env:
-          E2E_BASE_PATH: /kobo-books-summary
-          TEST_BASE_URL: http://127.0.0.1:3000/kobo-books-summary/
+          E2E_BASE_PATH: /readmory
+          TEST_BASE_URL: http://127.0.0.1:3000/readmory/
       - uses: actions/upload-pages-artifact@v4
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         with:

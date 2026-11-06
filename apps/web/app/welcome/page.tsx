@@ -125,7 +125,7 @@ export default function Welcome() {
           restrict features.
         </p>
         <a
-          href="https://github.com/alexivaner/kobo-books-summary/blob/main/PRIVACY.md"
+          href="https://github.com/alexivaner/readmory/blob/main/PRIVACY.md"
           target="_blank"
           rel="noopener noreferrer"
         >

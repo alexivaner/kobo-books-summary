@@ -10,4 +10,4 @@ This is Ivan's personal open-source project, owned by `alexivaner`.
 
 # Verification
 
-Run `pnpm typecheck`, `pnpm lint`, `pnpm test`, `pnpm build`, and relevant Playwright regressions. Use an isolated browser profile for tests. Leave the user's existing development server and browser library intact. Deployment is GitHub Pages from `main`, with `/kobo-books-summary` as its production base path.
+Run `pnpm typecheck`, `pnpm lint`, `pnpm test`, `pnpm build`, and relevant Playwright regressions. Use an isolated browser profile for tests. Leave the user's existing development server and browser library intact. Deployment is GitHub Pages from `main`, with `/readmory` as its production base path.
