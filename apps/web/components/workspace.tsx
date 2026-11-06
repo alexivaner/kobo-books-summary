@@ -67,7 +67,7 @@ import { BookHistory, EnrichedMetadata } from "./book-history";
 import { readingHistoryLabel } from "../../../packages/core/history";
 import type { Update } from "../../../packages/enrichment";
 import { appPath } from "../lib/paths";
-import { SUPPORT_URL } from "../lib/links";
+import SupportReminder, { SupportLink } from "./support";
 import { groupBooks } from "../../../packages/core/grouping";
 const nav = [
   { id: "dashboard", label: "Overview", icon: LayoutDashboard },
@@ -656,14 +656,7 @@ export default function Workspace() {
           <a className="nav-item" href={appPath("/welcome/")}>
             About this project ↗
           </a>
-          <a
-            className="nav-item"
-            href={SUPPORT_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Heart size={17} /> Support Development ↗
-          </a>
+          <SupportLink className="nav-item sidebar-support" />
           <div className="sidebar-foot">
             <span className="avatar">Y</span>
             <div>
@@ -702,6 +695,7 @@ export default function Workspace() {
           </div>
           <div className="top-actions">
             <span className="local-dot">Stored on this device</span>
+            <SupportLink className="support-topbar" compact />
             <button
               className="icon-button"
               aria-label="Open settings"
@@ -711,6 +705,16 @@ export default function Workspace() {
             </button>
           </div>
         </header>
+        <SupportReminder
+          eligible={
+            ready &&
+            data.books.length > 0 &&
+            !busy &&
+            page !== "import" &&
+            !activeBook &&
+            !confirm
+          }
+        />
         <main id="main-content">
           {ready && (
             <AutomaticEnrichment

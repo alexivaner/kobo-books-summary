@@ -2,6 +2,8 @@
 
 ## 0.1.0 — Public beta
 
+- More visible Ko-fi support buttons and a dismissible inline reminder after five minutes of eligible visible use, limited to once per 30 days in this browser.
+
 - Recover validated Kobalt tables around damaged indexes, retain the fullest session evidence across snapshots, and list available calendar months with active-day counts.
 
 - Calendar-first reading view with unified measured/reconstructed monthly time, approximate labels, grouped day details and active-date month navigation. Import actions stay above collapsed review/history; skipped-source warnings remain visible.

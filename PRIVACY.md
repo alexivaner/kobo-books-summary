@@ -9,3 +9,5 @@ Optional Open Library cover/metadata lookup sends book titles/authors or ISBNs d
 The website hosting provider receives normal web requests, including IP address and technical request information, when serving the app. This is distinct from uploading your reading library. GitHub and Ko-fi receive visits only when you follow their links; no embedded donation widget is used. Their own privacy policies apply.
 
 The repository contains synthetic examples only. Do not attach a real database, exported backup or private screenshot to public issues. See SECURITY.md for reporting a vulnerability.
+
+The optional support reminder stores only its next-eligible timestamp in this browser under `readmory-support-remind-after`. It counts visible eligible use in session memory, appears at most once every 30 days, and sends no reading data or usage telemetry to Ko-fi. Support links open Ko-fi only when clicked.

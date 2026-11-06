@@ -112,8 +112,13 @@ export default function Welcome() {
           Optional Open Library lookups share book identifiers only after you
           enable them.
         </p>
-        <a href={SUPPORT_URL} target="_blank" rel="noopener noreferrer">
-          Support Development ↗
+        <a
+          className="primary"
+          href={SUPPORT_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Support Readmory on Ko-fi ↗
         </a>
         <p>
           Support this free and open-source project. Donations never unlock or

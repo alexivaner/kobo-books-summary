@@ -102,7 +102,7 @@ test("welcome page and optional support link work on desktop and mobile", async 
   await expect(
     page.getByRole("heading", { name: "Your reading, remembered." }),
   ).toBeVisible();
-  const support = page.getByRole("link", { name: "Support Development" });
+  const support = page.getByRole("link", { name: "Support Readmory on Ko-fi" });
   await expect(support).toHaveAttribute("href", "https://ko-fi.com/hutomoivan");
   await expect(support).toHaveAttribute("rel", "noopener noreferrer");
   await page.setViewportSize({ width: 390, height: 844 });
