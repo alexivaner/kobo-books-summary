@@ -141,7 +141,23 @@ it("merges repeated native snapshots and preserves counters when the next source
   expect(p.sessions).toHaveLength(4);
   const store = new Store(SQL);
   store.commit(p);
-  store.commit({ ...p, books: p.books.map((b) => ({ ...b, duration: null })) });
+  store.commit({
+    ...p,
+    books: p.books.map((b) => ({ ...b, duration: null })),
+    sessions: p.sessions.map((s) => ({
+      ...s,
+      duration: s.duration > 0 ? 10 : 0,
+      koboEventTypes: s.koboEventTypes?.slice(0, 1),
+    })),
+  });
+  expect(
+    store.library("test").sessions.find((s) => s.evidence === "session")
+      ?.duration,
+  ).toBe(60);
+  expect(
+    store.library("test").sessions.find((s) => s.evidence === "reader-event")
+      ?.koboEventTypes,
+  ).toEqual([3, 46]);
   expect(store.library("test").books[0].duration).toBe(500);
   db.close();
 });

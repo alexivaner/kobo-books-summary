@@ -124,6 +124,45 @@ export const SessionSchema = z.object({
   koboEventTypes: z.array(z.number().int().nonnegative()).max(8).optional(),
 });
 export type Session = z.infer<typeof SessionSchema>;
+/** Repeated snapshots must not replace a completed session with a shorter,
+ * older observation or discard event types needed for reconstruction. */
+export function mergeSourceSession(
+  previous: Session | undefined,
+  incoming: Session,
+): Session {
+  if (
+    !previous ||
+    previous.id !== incoming.id ||
+    previous.bookId !== incoming.bookId ||
+    previous.start !== incoming.start
+  )
+    return incoming;
+  const best = incoming.duration >= previous.duration ? incoming : previous;
+  const types = [
+    ...new Set([
+      ...(previous.koboEventTypes || []),
+      ...(incoming.koboEventTypes || []),
+    ]),
+  ].slice(0, 8);
+  const ends = [previous.end, incoming.end]
+    .filter((s): s is string => !!s)
+    .sort((a, b) => Date.parse(a) - Date.parse(b));
+  return {
+    ...incoming,
+    ...best,
+    ...(ends.length ? { end: ends.at(-1)! } : {}),
+    ...(types.length
+      ? {
+          koboEventTypes: types,
+          evidence:
+            previous.evidence === "reader-event" ||
+            incoming.evidence === "reader-event"
+              ? ("reader-event" as const)
+              : best.evidence,
+        }
+      : {}),
+  };
+}
 export const SnapshotSchema = z.object({
   id: z.string(),
   at: z.string(),

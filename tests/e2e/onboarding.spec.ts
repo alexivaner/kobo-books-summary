@@ -182,7 +182,7 @@ test("source failures stay visible while detailed review and history remain coll
   ).toBeInViewport();
   await expect(
     page.getByText(
-      "Some reader files could not be imported. Review the details before saving.",
+      "Some reader files could not be fully verified. Review the details before saving.",
     ),
   ).toBeVisible();
   await expect(page.locator(".import-review")).not.toHaveAttribute("open", "");

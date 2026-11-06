@@ -55,3 +55,11 @@ Share cards are generated locally on a 1080 × 1350 canvas using cached covers a
 ## Import review
 
 The save and cancel actions appear beside the review heading, before counts or diagnostic content. Detailed diagnostics, duplicate candidates and book lists are inside a closed review disclosure. Import history is collapsed separately. A brief visible warning remains when database integrity or companion-file problems cause a source to be skipped; collapsing details must not silently conceal source failures. Existing records absent from an import remain preserved.
+
+## Recovering partial reader databases
+
+A failed SQLite integrity check normally skips that source. Kobalt has a bounded, explicit recovery path: scan the four known tables without secondary indexes, retain readable rows, and apply the normal identity, format and timing validation. Table failures and partial results remain diagnostic warnings. Recovery never repairs or writes to the original reader file, and sources with pending journal/WAL companions remain blocked until a consistent snapshot is supplied. Unreadable identities or invalid clocks do not become invented sessions.
+
+Repeated snapshots merge source sessions by stable ID, book and start time. A shorter older observation cannot shrink a retained duration; native event types are unioned so pairing evidence survives sparse reimports. This improves retention of already captured records, but cannot reconstruct exact active time from annotation dates or book length. Older backups containing actual timing records remain necessary for otherwise missing periods.
+
+The month chooser lists imported months with active-day counts, including activity-only months. Selecting February through August must not depend on timed sessions being present.

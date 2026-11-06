@@ -3614,7 +3614,8 @@ textarea {
 .month-picker > label {
   min-width: 0;
 }
-.month-picker input {
+.month-picker input,
+.month-picker select {
   width: 100%;
   min-width: 0;
 }

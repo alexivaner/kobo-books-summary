@@ -2,6 +2,8 @@
 
 ## 0.1.0 — Public beta
 
+- Recover validated Kobalt tables around damaged indexes, retain the fullest session evidence across snapshots, and list available calendar months with active-day counts.
+
 - Calendar-first reading view with unified measured/reconstructed monthly time, approximate labels, grouped day details and active-date month navigation. Import actions stay above collapsed review/history; skipped-source warnings remain visible.
 
 - Year/month reading statistics, book rankings and locally generated PNG share cards with cached covers and privacy controls. Earlier annotation dates now appear as activity evidence without inventing hours.
