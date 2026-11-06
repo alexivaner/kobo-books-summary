@@ -4081,3 +4081,113 @@ textarea {
     flex: 1;
   }
 }
+
+.support-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  text-decoration: none;
+  font-weight: 600;
+}
+.support-topbar {
+  min-height: 44px;
+  padding: 9px 15px;
+  border: 1px solid var(--green);
+  border-radius: 999px;
+  color: var(--green);
+  background: var(--pale);
+  font-size: 15px;
+  white-space: nowrap;
+}
+.sidebar-bottom > a.sidebar-support {
+  color: var(--green);
+  border: 1px solid var(--line);
+  background: var(--pale);
+  justify-content: center;
+  margin: 10px 0 16px;
+}
+.support-link:hover,
+.support-reminder-link:hover {
+  filter: brightness(0.92);
+}
+.support-link:focus-visible,
+.support-reminder-link:focus-visible {
+  outline: 3px solid var(--green);
+  outline-offset: 4px;
+}
+.support-reminder {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 18px 42px 0;
+  padding: 14px 18px;
+  background: var(--pale);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+.support-reminder > div {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+}
+.support-reminder p {
+  margin: 0;
+  font-size: 16px;
+}
+.support-reminder svg {
+  flex-shrink: 0;
+}
+.support-reminder-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 8px 12px;
+  border: 1px solid var(--green);
+  border-radius: 8px;
+  color: var(--green);
+  font-weight: 600;
+  text-decoration: none;
+  font-size: 15px;
+  white-space: nowrap;
+}
+.support-reminder .icon-button {
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+}
+@media (max-width: 600px) {
+  .top-actions {
+    gap: 8px;
+  }
+  .support-topbar {
+    padding: 8px 10px;
+    gap: 6px;
+    font-size: 14px;
+  }
+  .support-topbar > svg:last-child {
+    display: none;
+  }
+  .support-reminder {
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 12px 20px 0;
+    padding: 12px;
+    position: relative;
+  }
+  .support-reminder > div {
+    flex-basis: calc(100% - 44px);
+    padding-right: 34px;
+  }
+  .support-reminder > .icon-button {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+  }
+  .support-reminder-link {
+    margin-left: 33px;
+  }
+}
