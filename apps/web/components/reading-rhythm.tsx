@@ -138,12 +138,30 @@ export default function ReadingRhythm({
           </button>
           <label>
             Month
-            <input
-              type="month"
+            <select
               aria-label="Reading month"
               value={month}
               onChange={(e) => selectMonth(e.target.value)}
-            />
+            >
+              {[...new Set([...available.map((d) => d.slice(0, 7)), month])]
+                .sort()
+                .reverse()
+                .map((value) => {
+                  const [year, m] = value.split("-").map(Number);
+                  const days = available.filter((d) =>
+                    d.startsWith(value),
+                  ).length;
+                  return (
+                    <option key={value} value={value}>
+                      {new Date(year, m - 1, 1).toLocaleDateString(undefined, {
+                        month: "long",
+                        year: "numeric",
+                      })}{" "}
+                      · {days} {days === 1 ? "day" : "days"}
+                    </option>
+                  );
+                })}
+            </select>
           </label>
           <button
             className="icon-button"

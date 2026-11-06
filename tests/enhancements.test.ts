@@ -131,6 +131,66 @@ it("discovers Kobalt SQLite and blocks pending companions", async () => {
   expect(blocked.books).toHaveLength(0);
   expect(blocked.diagnostics[0]).toContain("companion");
 });
+it("recovers validated Kobalt rows around a damaged secondary index without changing source bytes", async () => {
+  const db = kobalt();
+  db.run("CREATE INDEX reading_sessions_book ON reading_sessions(book)");
+  const page = Number(
+    db.exec(
+      "SELECT rootpage FROM sqlite_master WHERE name='reading_sessions_book'",
+    )[0].values[0][0],
+  );
+  const pageSize = Number(db.exec("PRAGMA page_size")[0].values[0][0]);
+  const bytes = db.export();
+  db.close();
+  bytes[(page - 1) * pageSize] = 255;
+  const original = bytes.slice();
+  const preview = await discover(SQL, [{ path: "kobalt.sqlite", bytes }], "d");
+  expect(preview.sources).toContain("Kobalt");
+  expect(
+    preview.diagnostics.some((d) =>
+      d.includes("Kobalt integrity check failed"),
+    ),
+  ).toBe(true);
+  expect(preview.sessions).toHaveLength(1);
+  expect(preview.sessions[0].duration).toBe(30);
+  expect(preview.annotations).toHaveLength(2);
+  expect(bytes).toEqual(original);
+  const store = new Store(SQL);
+  store.commit(preview);
+  store.commit(preview);
+  expect(store.library("d").sessions).toHaveLength(1);
+});
+it("retains readable Kobalt annotations when its session table is damaged", async () => {
+  const db = kobalt();
+  const page = Number(
+    db.exec(
+      "SELECT rootpage FROM sqlite_master WHERE name='reading_sessions'",
+    )[0].values[0][0],
+  );
+  const pageSize = Number(db.exec("PRAGMA page_size")[0].values[0][0]);
+  const bytes = db.export();
+  db.close();
+  bytes[(page - 1) * pageSize] = 255;
+  const p = await discover(SQL, [{ path: "kobalt.sqlite", bytes }], "d");
+  expect(p.sessions).toHaveLength(0);
+  expect(p.annotations).toHaveLength(2);
+  expect(
+    p.diagnostics.some((d) =>
+      d.includes("reading_sessions could not be completely read"),
+    ),
+  ).toBe(true);
+});
+it("rejects out-of-range session clocks during recovery without losing valid Kobalt sessions", () => {
+  const db = kobalt();
+  db.run(
+    "INSERT INTO reading_sessions(id,book,started,observed,active_ms) VALUES('bad','key',1e30,1e30,1)",
+  );
+  const p = importKobalt(db, "d", true);
+  expect(p.sessions).toHaveLength(1);
+  expect(p.sessions[0].duration).toBe(30);
+  expect(p.diagnostics.some((d) => d.includes("timestamp range"))).toBe(true);
+  db.close();
+});
 it("uses ISBN cover URLs without transmitting annotations or making a metadata query", async () => {
   vi.useFakeTimers();
   vi.setSystemTime(new Date("2030-01-01"));

@@ -83,7 +83,7 @@ test("one calendar combines native Kobo history, Kobalt sessions and KOReader in
   await expect(coverage).toContainText("Kobo");
   await expect(coverage).toContainText("Kobalt");
   await expect(coverage).toContainText("KOReader");
-  await page.getByLabel("Reading month").fill("2026-03");
+  await page.getByLabel("Reading month").selectOption("2026-03");
   await page
     .getByRole("button", {
       name: "2026-03-15 · Reading activity recorded",
@@ -96,7 +96,7 @@ test("one calendar combines native Kobo history, Kobalt sessions and KOReader in
   await expect(
     page.getByRole("region", { name: "Monthly reading summary" }),
   ).toContainText("Not recorded");
-  await page.getByLabel("Reading month").fill("2026-09");
+  await page.getByLabel("Reading month").selectOption("2026-09");
   await page.getByRole("button", { name: /2026-09-21 · .* estimated/ }).click();
   await expect(selected).toContainText("Kobalt");
   await expect(selected).toContainText("KOReader");
@@ -111,7 +111,7 @@ test("one calendar combines native Kobo history, Kobalt sessions and KOReader in
   await expect(
     page.getByRole("region", { name: "Kobo session estimates" }),
   ).toHaveCount(0);
-  await page.getByLabel("Reading month").fill("2026-10");
+  await page.getByLabel("Reading month").selectOption("2026-10");
   await page
     .getByRole("button", { name: "Previous month", exact: true })
     .click();
@@ -132,7 +132,7 @@ test("one calendar combines native Kobo history, Kobalt sessions and KOReader in
   await page.setViewportSize({ width: 390, height: 844 });
   await page.reload();
   await expect(coverage).toBeVisible();
-  await page.getByLabel("Reading month").fill("2026-09");
+  await page.getByLabel("Reading month").selectOption("2026-09");
   await page.getByRole("button", { name: /2026-09-21 · .* estimated/ }).click();
   await expect(page.locator(".sidebar")).not.toBeInViewport();
   await page.evaluate(() => window.scrollTo(0, 0));
@@ -158,9 +158,9 @@ test("one calendar combines native Kobo history, Kobalt sessions and KOReader in
   await context.setOffline(true);
   await page.reload();
   await expect(coverage).toContainText("2026-03-15");
-  await page.getByLabel("Reading month").fill("2026-09");
+  await page.getByLabel("Reading month").selectOption("2026-09");
   await expect(monthly).toContainText("≈ 31 min");
-  await page.getByRole("button", {name:"Open menu",exact:true}).click();
+  await page.getByRole("button", { name: "Open menu", exact: true }).click();
   await page.getByRole("button", { name: "Statistics", exact: true }).click();
   await page.getByLabel("Statistics year").selectOption("2026");
   await page.getByLabel("Statistics month").selectOption("9");

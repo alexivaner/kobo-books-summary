@@ -6,6 +6,8 @@ import {
   iso,
   stableId,
   normalizePath,
+  type Session,
+  mergeSourceSession,
 } from "../core";
 import { importKoboHistory, koboDate } from "./kobo-history";
 import { isResourceFork } from "./cover-plan";
@@ -457,13 +459,28 @@ export async function discover(
         onProgress?.("Reading " + path.split("/").pop());
         const db = new SQL.Database(f.bytes);
         try {
-          if (db.exec("PRAGMA quick_check")[0]?.values[0]?.[0] !== "ok")
+          let intact = false;
+          try {
+            intact = db.exec("PRAGMA quick_check")[0]?.values[0]?.[0] === "ok";
+          } catch {
+            /* A readable Kobalt table may survive a damaged index. */
+          }
+          const recoveringKobalt = !intact && /kobalt\.sqlite$/i.test(path);
+          if (!intact && !recoveringKobalt)
             throw Error("SQLite integrity check failed");
           part = /KoboReader/i.test(path)
             ? importKobo(db, deviceId)
             : /kobalt\.sqlite$/i.test(path)
-              ? importKobalt(db, deviceId)
+              ? importKobalt(db, deviceId, recoveringKobalt)
               : importStats(db, deviceId);
+          if (recoveringKobalt && !part.books.length)
+            throw Error(
+              "Kobalt integrity check failed; no readable book identities could be recovered.",
+            );
+          if (recoveringKobalt)
+            part.diagnostics.unshift(
+              "Kobalt integrity check failed. Readable table rows were recovered and validated; some records may be missing. The original device file was not modified.",
+            );
         } finally {
           db.close();
         }
@@ -522,7 +539,13 @@ export async function discover(
     });
   }
   p.books = [...mergedBooks.values()];
-  p.sessions = [...new Map(p.sessions.map((s) => [s.id, s])).values()];
+  const mergedSessions = new Map<string, Session>();
+  for (const session of p.sessions)
+    mergedSessions.set(
+      session.id,
+      mergeSourceSession(mergedSessions.get(session.id), session),
+    );
+  p.sessions = [...mergedSessions.values()];
   p.annotations = [...new Map(p.annotations.map((a) => [a.id, a])).values()];
   p.sources = [...new Set(p.sources)];
   if (!p.sources.length)

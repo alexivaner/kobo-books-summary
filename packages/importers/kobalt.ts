@@ -1,4 +1,4 @@
-import type { Database } from "sql.js";
+import type { Database, Statement } from "sql.js";
 import { type Book, type Preview, stableId, normalizePath, iso } from "../core";
 import { rows } from "./index";
 type Row = Record<string, unknown>;
@@ -6,7 +6,11 @@ const str = (v: unknown) => (v == null ? "" : String(v));
 const number = (v: unknown) =>
   typeof v === "number" && Number.isFinite(v) ? v : null;
 /** Kobalt SQLite schema: entries kind 0=bookmark, 1=highlight; session clocks are milliseconds. */
-export function importKobalt(db: Database, deviceId: string): Preview {
+export function importKobalt(
+  db: Database,
+  deviceId: string,
+  recoverReadableTables = false,
+): Preview {
   const p: Preview = {
     books: [],
     annotations: [],
@@ -14,6 +18,35 @@ export function importKobalt(db: Database, deviceId: string): Preview {
     diagnostics: [],
     sources: ["Kobalt"],
     deviceId,
+  };
+  const read = (table: string): Row[] => {
+    if (!recoverReadableTables) return rows(db, table);
+    const recovered: Row[] = [];
+    let statement: Statement | undefined;
+    try {
+      if (
+        !db.exec("SELECT 1 FROM sqlite_master WHERE type='table' AND name=?", [
+          table,
+        ]).length
+      )
+        return [];
+      // A damaged secondary index must not prevent scanning readable table rows.
+      statement = db.prepare(
+        `SELECT * FROM "${table}" NOT INDEXED LIMIT 100001`,
+      );
+      while (statement.step()) {
+        if (recovered.length >= 100000)
+          throw Error("100,000 record recovery limit reached");
+        recovered.push(statement.getAsObject());
+      }
+    } catch {
+      p.diagnostics.push(
+        `Kobalt recovery: ${table} could not be completely read; ${recovered.length} readable rows were retained for validation.`,
+      );
+    } finally {
+      statement?.free();
+    }
+    return recovered;
   };
   const byIdentity = new Map<string, Book>(),
     byKey = new Map<string, Book>();
@@ -52,7 +85,7 @@ export function importKobalt(db: Database, deviceId: string): Preview {
     }
     return b;
   };
-  for (const r of rows(db, "books")) {
+  for (const r of read("books")) {
     const identity = str(r.identity);
     if (!identity) {
       p.diagnostics.push("Skipped Kobalt book without identity.");
@@ -60,7 +93,7 @@ export function importKobalt(db: Database, deviceId: string): Preview {
     }
     byKey.set(str(r.book), ensure(identity, str(r.fingerprint), str(r.title)));
   }
-  for (const r of rows(db, "book_state")) {
+  for (const r of read("book_state")) {
     try {
       if (Number(r.format) !== 1) throw Error("unsupported book-state format");
       if (typeof r.payload !== "string" || r.payload.length > 16384)
@@ -92,7 +125,7 @@ export function importKobalt(db: Database, deviceId: string): Preview {
       );
     }
   }
-  for (const r of rows(db, "reading_sessions")) {
+  for (const r of read("reading_sessions")) {
     const start = number(r.started),
       observed = number(r.observed),
       ms = number(r.active_ms);
@@ -112,6 +145,20 @@ export function importKobalt(db: Database, deviceId: string): Preview {
       p.diagnostics.push("Skipped Kobalt session without book identity.");
       continue;
     }
+    const started = iso(start / 1000),
+      last = iso(observed / 1000),
+      ended = iso(Math.max(observed, start + ms) / 1000);
+    if (
+      !started ||
+      !last ||
+      !ended ||
+      Math.max(observed, start + ms) > 253402300799999
+    ) {
+      p.diagnostics.push(
+        "Skipped Kobalt session with invalid timestamp range.",
+      );
+      continue;
+    }
     const b =
       byKey.get(str(r.book)) ||
       ensure(
@@ -124,20 +171,19 @@ export function importKobalt(db: Database, deviceId: string): Preview {
     if (r.title) b.title = str(r.title);
     b.duration = (b.duration ?? 0) + ms / 1000;
     b.durationKind = "recorded";
-    const last = iso(observed / 1000);
     if (last && (!b.lastRead || last > b.lastRead)) b.lastRead = last;
     if (b.status === "unknown" && ms > 0) b.status = "reading";
     if (ms > 0 && r.id)
       p.sessions.push({
         id: stableId(deviceId, "kobalt", "session", str(r.id)),
         bookId: b.id,
-        start: iso(start / 1000)!,
+        start: started,
         duration: ms / 1000,
-        end: new Date(Math.max(observed, start + ms)).toISOString(),
+        end: ended,
         kind: "recorded",
       });
   }
-  for (const r of rows(db, "entries")) {
+  for (const r of read("entries")) {
     const b = byKey.get(str(r.book));
     if (!b) {
       p.diagnostics.push(

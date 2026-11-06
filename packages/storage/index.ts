@@ -12,6 +12,8 @@ import {
   type Library,
   type Knowledge,
   type Reflection,
+  type Session,
+  mergeSourceSession,
 } from "../core";
 import { lookupQueryKey } from "../enrichment";
 import { readingHistory, type Attempt } from "../core/history";
@@ -169,7 +171,14 @@ export class Store {
           );
         }
       }
-      for (const s of sessions) this.put("sessions", s);
+      const existingSessions = new Map(
+        this.all<Session>("sessions").map((s) => [s.id, s]),
+      );
+      for (const s of sessions) {
+        const merged = mergeSourceSession(existingSessions.get(s.id), s);
+        this.put("sessions", merged);
+        existingSessions.set(s.id, merged);
+      }
       this.put("snapshots", {
         id,
         ...{

@@ -37,7 +37,9 @@ it.skipIf(!process.env.KOBO_PRIVATE_FIXTURES)(
     const preview = await discover(SQL, files, "Clara Colour validation");
     expect(
       preview.diagnostics.every((d) =>
-        /Recovered .*book placeholders|Cover unavailable for/.test(d),
+        /Recovered .*book placeholders|Cover unavailable for|Kobalt integrity check failed|Kobalt recovery:/.test(
+          d,
+        ),
       ),
     ).toBe(true);
     expect(preview.books.length).toBeGreaterThan(0);

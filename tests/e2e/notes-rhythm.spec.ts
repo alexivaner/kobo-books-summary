@@ -89,7 +89,7 @@ test("reading rhythm exposes recorded days and sessions with reader provenance",
   await expect(
     page.getByRole("heading", { name: "Reading rhythm.", exact: true }),
   ).toBeVisible();
-  await page.getByLabel("Reading month").fill("2026-09");
+  await page.getByLabel("Reading month").selectOption("2026-09");
   const day = page
     .getByRole("button", { name: /2026-09-21 · .* recorded$/ })
     .first();
@@ -110,7 +110,7 @@ test("reading rhythm exposes recorded days and sessions with reader provenance",
   await expect(
     page.getByRole("heading", { name: "Reading rhythm.", exact: true }),
   ).toBeVisible();
-  await page.getByLabel("Reading month").fill("2026-09");
+  await page.getByLabel("Reading month").selectOption("2026-09");
   await expect(page.locator(".calendar-days .has-reading")).toHaveCount(1);
   expect(
     await page.evaluate(

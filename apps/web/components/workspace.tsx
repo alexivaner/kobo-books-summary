@@ -1773,8 +1773,8 @@ export default function Workspace() {
                             ),
                           ) && (
                             <p className="import-attention" role="status">
-                              Some reader files could not be imported. Review
-                              the details before saving.
+                              Some reader files could not be fully verified.
+                              Review the details before saving.
                             </p>
                           )}
                           <details className="import-review">
