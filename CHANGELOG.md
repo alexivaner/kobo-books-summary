@@ -2,6 +2,8 @@
 
 ## 0.1.0 — Public beta
 
+- Calendar-first reading view with unified measured/reconstructed monthly time, approximate labels, grouped day details and active-date month navigation. Import actions stay above collapsed review/history; skipped-source warnings remain visible.
+
 - Year/month reading statistics, book rankings and locally generated PNG share cards with cached covers and privacy controls. Earlier annotation dates now appear as activity evidence without inventing hours.
 
 - Unified native Kobo event history, measured analytics sessions, Kobalt and KOReader activity. Added reader coverage, evidence labels, conservative overlap handling, second-level durations, checksum-based KOReader linking and tolerance for sub-second Kobalt clock drift.

@@ -1699,6 +1699,43 @@ export default function Workspace() {
                             <h2 ref={previewHeading} tabIndex={-1}>
                               Ready to import
                             </h2>
+                            <div className="button-row">
+                              <button
+                                className="primary"
+                                disabled={disabled || !preview.books.length}
+                                onClick={async () => {
+                                  setBusy("Saving your library…");
+                                  try {
+                                    setData(
+                                      await call<Library>("commit", preview),
+                                    );
+                                    setPreview(null);
+                                    setNotice(
+                                      "Library saved. You can eject your Kobo.",
+                                    );
+                                    navigate("library");
+                                  } catch (e) {
+                                    setError(
+                                      e instanceof Error
+                                        ? e.message
+                                        : String(e),
+                                    );
+                                  } finally {
+                                    setBusy("");
+                                  }
+                                }}
+                              >
+                                <Check size={16} />
+                                Import into my library
+                              </button>
+                              <button
+                                className="secondary"
+                                disabled={disabled}
+                                onClick={() => setPreview(null)}
+                              >
+                                Cancel
+                              </button>
+                            </div>
                           </div>
                           <p className="muted">
                             {preview.sources.join(" + ") ||
@@ -1710,7 +1747,7 @@ export default function Workspace() {
                               <strong>
                                 {preview.books.filter(isReadingBook).length}
                               </strong>
-                              <span>reading-library records</span>
+                              <span>books</span>
                             </div>
                             <div>
                               <strong>{preview.annotations.length}</strong>
@@ -1730,102 +1767,84 @@ export default function Workspace() {
                             existing books will update. Absent books and
                             annotations stay in your library.
                           </p>
-                          {preview.diagnostics.length > 0 && (
-                            <div className="diagnostics">
-                              <strong>Import diagnostics</strong>
-                              {preview.diagnostics.map((d, i) => (
-                                <p key={i}>
-                                  <AlertCircle size={14} />
-                                  {d}
+                          {preview.diagnostics.some((d) =>
+                            /integrity check failed|Pending SQLite companion|could not be read|not a database|database.*malformed/i.test(
+                              d,
+                            ),
+                          ) && (
+                            <p className="import-attention" role="status">
+                              Some reader files could not be imported. Review
+                              the details before saving.
+                            </p>
+                          )}
+                          <details className="import-review">
+                            <summary>
+                              Review import details ·{" "}
+                              {preview.diagnostics.length} notices
+                            </summary>
+                            {preview.diagnostics.length > 0 && (
+                              <div className="diagnostics">
+                                <strong>Import diagnostics</strong>
+                                {preview.diagnostics.map((d, i) => (
+                                  <p key={i}>
+                                    <AlertCircle size={14} />
+                                    {d}
+                                  </p>
+                                ))}
+                              </div>
+                            )}
+                            {candidates.length > 0 && (
+                              <details>
+                                <summary>
+                                  Possible duplicate editions · kept separate
+                                </summary>
+                                {candidates.slice(0, 10).map((g, i) => (
+                                  <p key={i}>
+                                    {g[0].title} ·{" "}
+                                    {g.map((b) => b.source).join(", ")}
+                                  </p>
+                                ))}
+                                <p>
+                                  Matching titles do not prove identical
+                                  editions. Source records remain separate for
+                                  review.
                                 </p>
-                              ))}
+                              </details>
+                            )}
+                            <p className="muted">
+                              {
+                                preview.books.filter((b) => !isReadingBook(b))
+                                  .length
+                              }{" "}
+                              store previews/catalog records will be kept
+                              separately and excluded from your shelf and
+                              statistics by default.
+                            </p>
+                            <div className="preview-books">
+                              {preview.books
+                                .filter(isReadingBook)
+                                .slice(0, 8)
+                                .map((b) => (
+                                  <div key={b.id}>
+                                    <BookOpen size={15} />
+                                    <span>
+                                      {b.title}
+                                      <small>{b.author}</small>
+                                    </span>
+                                    <span className="source">{b.source}</span>
+                                  </div>
+                                ))}
                             </div>
-                          )}
-                          {candidates.length > 0 && (
-                            <details>
-                              <summary>
-                                Possible duplicate editions · kept separate
-                              </summary>
-                              {candidates.slice(0, 10).map((g, i) => (
-                                <p key={i}>
-                                  {g[0].title} ·{" "}
-                                  {g.map((b) => b.source).join(", ")}
-                                </p>
-                              ))}
-                              <p>
-                                Matching titles do not prove identical editions.
-                                Source records remain separate for review.
-                              </p>
-                            </details>
-                          )}
-                          <p className="muted">
-                            {
-                              preview.books.filter((b) => !isReadingBook(b))
-                                .length
-                            }{" "}
-                            store previews/catalog records will be kept
-                            separately and excluded from your shelf and
-                            statistics by default.
-                          </p>
-                          <div className="preview-books">
-                            {preview.books
-                              .filter(isReadingBook)
-                              .slice(0, 8)
-                              .map((b) => (
-                                <div key={b.id}>
-                                  <BookOpen size={15} />
-                                  <span>
-                                    {b.title}
-                                    <small>{b.author}</small>
-                                  </span>
-                                  <span className="source">{b.source}</span>
-                                </div>
-                              ))}
-                          </div>
-                          <div className="button-row">
-                            <button
-                              className="primary"
-                              disabled={disabled || !preview.books.length}
-                              onClick={async () => {
-                                setBusy("Saving your library…");
-                                try {
-                                  setData(
-                                    await call<Library>("commit", preview),
-                                  );
-                                  setPreview(null);
-                                  setNotice(
-                                    "Library saved. You can eject your Kobo.",
-                                  );
-                                  navigate("library");
-                                } catch (e) {
-                                  setError(
-                                    e instanceof Error ? e.message : String(e),
-                                  );
-                                } finally {
-                                  setBusy("");
-                                }
-                              }}
-                            >
-                              <Check size={16} />
-                              Import into my library
-                            </button>
-                            <button
-                              className="secondary"
-                              disabled={disabled}
-                              onClick={() => setPreview(null)}
-                            >
-                              Cancel
-                            </button>
-                          </div>
+                          </details>
                         </section>
                       )}
                     </section>
                   </div>
-                  <section className="panel history">
-                    <div className="section-heading">
-                      <h2>Import history</h2>
+                  <details className="panel history import-history">
+                    <summary>
+                      <span>Import history</span>
                       <span className="counter">{data.snapshots.length}</span>
-                    </div>
+                    </summary>
                     {data.snapshots.length ? (
                       data.snapshots
                         .slice()
@@ -1860,7 +1879,7 @@ export default function Workspace() {
                         Your first connection is the start of something good.
                       </p>
                     )}
-                  </section>
+                  </details>
                 </>
               )}
               {page === "settings" && (

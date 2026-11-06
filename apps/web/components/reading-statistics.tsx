@@ -20,7 +20,6 @@ import {
 import { groupBooks } from "../../../packages/core/grouping";
 import { createShareCard } from "../lib/share-card";
 import Modal from "./modal";
-import KoboSessionEstimates from "./kobo-session-estimates";
 const readers = { kobo: "Kobo", kobalt: "Kobalt", koreader: "KOReader" };
 function Thumbnail({ book }: { book: Book }) {
   const [failed, setFailed] = useState<string | null>(null);
@@ -87,10 +86,7 @@ export default function ReadingStatistics({
       ),
     [library, allStats.years, source],
   );
-  const max = Math.max(
-    1,
-    ...months.map((s) => (s.incompleteTime ? 0 : s.seconds || 0)),
-  );
+  const max = Math.max(1, ...months.map((s) => s.seconds || 0));
   const [preview, setPreview] = useState(false),
     [showBooks, setShowBooks] = useState(true),
     [url, setUrl] = useState(""),
@@ -278,12 +274,12 @@ export default function ReadingStatistics({
                 : "Monthly reading time",
             stats.seconds === null
               ? "Not recorded"
-              : stats.incompleteTime
-                ? "Incomplete"
-                : `${stats.minimum ? "At least " : ""}${duration(stats.seconds)}`,
-            stats.incompleteTime && stats.seconds !== null
-              ? `${duration(stats.seconds)} in imported timed sessions`
-              : "",
+              : `${stats.estimated ? "≈ " : stats.minimum ? "At least " : ""}${duration(stats.seconds)}`,
+            stats.estimated
+              ? "Includes estimated elapsed session time"
+              : stats.incompleteTime && stats.seconds !== null
+                ? "Partial imported history"
+                : "",
           ],
           ["Active days", stats.activeDays],
           ["Books explored", stats.books],
@@ -297,33 +293,26 @@ export default function ReadingStatistics({
         ))}
       </section>
       {stats.incompleteTime && (
-        <aside className="panel" aria-label="Incomplete time history">
-          <strong>Incomplete time history</strong>
+        <aside
+          className="statistics-evidence"
+          aria-label="Incomplete time history"
+        >
           <p>
             Some reading activity has no timed session record. Lifetime book
             totals cannot be assigned to this
             {period.month === null ? " year" : " month"}.
           </p>
-          <p>
-            Lifetime totals remain available under All time and on each book.
-          </p>
         </aside>
       )}
       <p className="statistics-evidence">
         {period.year === null
-          ? "All-time totals include undated book counters. Year and month views use dated sessions only."
-          : "Dated sessions provide the time shown here. Reader events and annotation dates count toward active days, with no invented hours."}{" "}
+          ? "All-time totals include undated book counters. Year and month views combine dated measured and reconstructed sessions."
+          : "≈ includes estimated elapsed time, which may include idle time. Untimed events and annotations add active days only."}{" "}
         {stats.minimum
           ? "Overlapping records use a conservative minimum. "
           : ""}
         Finishes without a known date appear in all-time totals.
       </p>
-      <KoboSessionEstimates
-        library={library}
-        period={period}
-        source={source}
-        onOpenBook={onOpenBook}
-      />
       <section
         className="panel statistics-months"
         aria-label="Monthly reading breakdown"
@@ -345,16 +334,14 @@ export default function ReadingStatistics({
               <span className="month-bar-track">
                 <span
                   style={{
-                    height: m.incompleteTime
-                      ? "12%"
-                      : m.seconds
-                        ? `${Math.max(8, (m.seconds / max) * 100)}%`
-                        : m.activeDays
-                          ? "12%"
-                          : "0%",
+                    height: m.seconds
+                      ? `${Math.max(8, (m.seconds / max) * 100)}%`
+                      : m.activeDays
+                        ? "12%"
+                        : "0%",
                   }}
                   className={
-                    m.seconds === null || m.incompleteTime ? "date-only" : ""
+                    m.seconds === null || m.estimated ? "date-only" : ""
                   }
                 />
               </span>
@@ -368,17 +355,14 @@ export default function ReadingStatistics({
                   ? m.activeDays
                     ? "Read"
                     : "—"
-                  : m.incompleteTime
-                    ? "Partial"
-                    : duration(m.seconds)}
+                  : `${m.estimated ? "≈ " : ""}${duration(m.seconds)}`}
               </small>
             </button>
           ))}
         </div>
         <p className="muted">
           Choose a month to explore it. Read means activity is recorded but its
-          duration is unavailable. Partial means timed records cover only part
-          of the activity.
+          duration is unavailable. ≈ includes estimated elapsed session time.
         </p>
       </section>
       {yearly.length > 0 && (
@@ -394,9 +378,7 @@ export default function ReadingStatistics({
                 <span>
                   {y.seconds === null
                     ? "Time not recorded"
-                    : y.incompleteTime
-                      ? `${duration(y.seconds)} in timed sessions · incomplete`
-                      : `${y.minimum ? "At least " : ""}${duration(y.seconds)}`}
+                    : `${y.estimated ? "≈ " : y.minimum ? "At least " : ""}${duration(y.seconds)}`}
                 </span>
                 <span>
                   {y.activeDays} active days · {y.books} books
@@ -418,7 +400,7 @@ export default function ReadingStatistics({
               onChange={(e) => setBy(e.target.value as "days" | "time")}
             >
               <option value="days">Active reading days</option>
-              <option value="time">Recorded time</option>
+              <option value="time">Reading time</option>
             </select>
           </label>
         </div>
@@ -450,13 +432,13 @@ export default function ReadingStatistics({
                         : "Dates unavailable"
                       : row.seconds === null
                         ? "Time unavailable"
-                        : `${row.minimum ? "≥ " : ""}${duration(row.seconds)}`}
+                        : `${row.estimated ? "≈ " : row.minimum ? "≥ " : ""}${duration(row.seconds)}`}
                   </strong>
                   <span>
                     {by === "days"
                       ? row.seconds === null
                         ? "Time unavailable"
-                        : `${duration(row.seconds)} ${period.year === null ? "lifetime" : "in dated sessions"}`
+                        : `${row.estimated ? "≈ " : ""}${duration(row.seconds)} ${period.year === null ? "lifetime" : "in dated sessions"}`
                       : row.days
                         ? `${row.days} active days`
                         : "Dates unavailable"}
@@ -538,7 +520,7 @@ export default function ReadingStatistics({
           </label>
           <p className="results-label">
             {periodLabel(period)} · Ranked by{" "}
-            {by === "days" ? "active reading days" : "recorded time"}
+            {by === "days" ? "active reading days" : "reading time"}
           </p>
           {busy ? (
             <p role="status">

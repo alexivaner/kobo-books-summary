@@ -90,3 +90,5 @@ Combined reading history: native Kobo Event.ExtraData is decoded as a bounded Qt
 
 
 Statistics and share cards: year/month/reader filters and frequency/time rankings use conservative matched-book totals. Dated annotation creation evidence is included in activity days without adding duration, making pre-session history visible when notes survive. Native Kobo annotation timestamps without a zone use UTC. Share cards are generated locally as 1080 × 1350 PNGs with cached/fallback covers, selected scope, recorded-time labels and optional book redaction. Downloads and unsupported-native-share fallback are verified offline with synthetic data; no private library content is included in public artifacts.
+
+Monthly Statistics and Reading rhythm share `readingTimeline`. Reconstructed Kobo windows are trimmed against all measured windows of the same grouped book, split at local midnight and combined conservatively with provenance flags. The view model is never persisted as measured sessions. Calendar month changes select the first active day; import review actions precede collapsed diagnostic/book lists, with skipped-file warnings left visible.

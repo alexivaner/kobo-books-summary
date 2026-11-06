@@ -27,6 +27,7 @@ test("USB cached artwork is counted before import and stays visible offline", as
         ),
       },
     ]);
+  await page.getByText(/Review import details/).click();
   await expect(
     page.getByText(/1 of 2 reading-library records have local covers/),
   ).toBeVisible();

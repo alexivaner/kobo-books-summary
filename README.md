@@ -17,7 +17,7 @@ Formerly Kobo Books Summary. A local-first reading knowledge platform for **Kobo
 - Explore **Statistics** by year, month and reader, rank books by active days or recorded time, and generate a local PNG share card with covers. Preview and download it, or open your device’s share options. Notes and highlights are excluded from the image.
 - Export book notes to Markdown/JSON, and back up or restore the complete local library.
 - Browse **Personal notes** separately: reader notes, standalone notes, and your own saved reflections, with search and book links.
-- Explore **Reading rhythm** across native Kobo, Kobalt and KOReader: measured sessions, native event dates, last-read evidence, source coverage and conservative combined time. Aggregate book counters stay separate from daily durations. [How reading history is combined](docs/READING_HISTORY.md).
+- Explore **Reading rhythm** across native Kobo, Kobalt and KOReader: a calendar-first view of measured sessions and reconstructed Kobo intervals, native event dates, last-read evidence and source coverage. Estimated totals use ≈ and date clicks reveal book/session details. Aggregate book counters stay separate from daily durations. [How reading history is combined](docs/READING_HISTORY.md).
 - Readable light/dark interface with larger body text and controls, and offline browsing after the production app has loaded.
 
 ## Public beta

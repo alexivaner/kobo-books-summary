@@ -7,6 +7,8 @@ import path from "node:path";
 import { discover } from "../packages/importers";
 import { readingLibrary } from "../packages/core";
 import { Store } from "../packages/storage";
+import { readingStatistics } from "../packages/analytics/statistics";
+import { readingTimeline } from "../packages/analytics/timeline";
 import {
   reconstructKoboSessions,
   koboSessionDays,
@@ -50,6 +52,11 @@ it.skipIf(!process.env.KOBO_PRIVATE_FIXTURES)(
     expect(next.books.length).toBe(first.books.length);
     expect(next.annotations.length).toBe(first.annotations.length);
     const reconstructed = reconstructKoboSessions(next);
+    const months = [
+      ...new Set(
+        [...readingTimeline(next).days.keys()].map((d) => d.slice(0, 7)),
+      ),
+    ].sort();
     await writeFile(
       "/private/tmp/kobo-validation-summary.json",
       JSON.stringify({
@@ -61,6 +68,20 @@ it.skipIf(!process.env.KOBO_PRIVATE_FIXTURES)(
           .length,
         annotations: next.annotations.length,
         recordedIntervals: next.sessions.length,
+        unifiedMonths: Object.fromEntries(
+          months.map((month) => {
+            const [year, m] = month.split("-").map(Number);
+            const stats = readingStatistics(next, { year, month: m });
+            return [
+              month,
+              {
+                seconds: stats.seconds,
+                estimated: stats.estimated,
+                activeDays: stats.activeDays,
+              },
+            ];
+          }),
+        ),
         reconstructedKoboSessions: reconstructed.sessions.length,
         reconstructedKoboElapsedSeconds: reconstructed.sessions.reduce(
           (n, s) => n + s.seconds,

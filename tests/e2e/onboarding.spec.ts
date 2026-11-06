@@ -1,9 +1,11 @@
 import { test, expect } from "@playwright/test";
 import path from "node:path";
+import { readFile } from "node:fs/promises";
+const base = process.env.E2E_BASE_PATH || "";
 test("guided connection explains files and advances to review before saving", async ({
   page,
 }, testInfo) => {
-  await page.goto("/#import");
+  await page.goto(base + "/#import");
   await expect(page.getByText("Opening your local library…")).toBeHidden();
   await expect(
     page.getByRole("heading", { name: "Connect your Kobo." }),
@@ -51,6 +53,9 @@ test("guided connection explains files and advances to review before saving", as
       name: "Ready to import",
     }),
   ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Import into my library" }),
+  ).toBeInViewport();
   await page.getByRole("button", { name: "Import into my library" }).click();
   await expect(
     page.getByRole("heading", { name: "The Quiet Atlas", exact: true }),
@@ -61,10 +66,10 @@ test("guided connection explains files and advances to review before saving", as
 });
 test("compact source cards and guided imports fit a dark mobile viewport", async ({
   page,
-}) => {
+}, testInfo) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.addInitScript(() => localStorage.setItem("kobo-theme", "dark"));
-  await page.goto("/#import");
+  await page.goto(base + "/#import");
   await expect(page.getByText("Opening your local library…")).toBeHidden();
   await page.getByRole("button", { name: "My Kobo is connected" }).click();
   await expect(
@@ -78,6 +83,15 @@ test("compact source cards and guided imports fit a dark mobile viewport", async
   await page
     .getByLabel("Select Kobo source files", { exact: true })
     .setInputFiles(path.resolve("fixtures/generated/KoboReader.sqlite"));
+  await expect(
+    page.getByRole("button", { name: "Import into my library" }),
+  ).toBeInViewport();
+  await expect(page.locator(".import-review")).not.toHaveAttribute("open", "");
+  await expect(page.locator(".import-history")).not.toHaveAttribute("open", "");
+  await page.screenshot({
+    path: testInfo.outputPath("import-review-mobile.png"),
+    fullPage: true,
+  });
   await page.getByRole("button", { name: "Import into my library" }).click();
   await page
     .getByRole("heading", { name: "The Quiet Atlas", exact: true })
@@ -107,7 +121,7 @@ test("file selection shows measured progress and comfortably sized controls", as
       return original.call(this);
     };
   });
-  await page.goto("/#import");
+  await page.goto(base + "/#import");
   await expect(page.getByText("Opening your local library…")).toBeHidden();
   await page.getByRole("button", { name: "My Kobo is connected" }).click();
   for (const name of ["Select Kobo folder", "Select source files"]) {
@@ -139,4 +153,40 @@ test("file selection shows measured progress and comfortably sized controls", as
   await expect(
     page.getByRole("button", { name: "Import into my library" }),
   ).toBeEnabled();
+});
+
+test("source failures stay visible while detailed review and history remain collapsed", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(base + "/#import");
+  await expect(page.getByText("Opening your local library…")).toBeHidden();
+  await page
+    .getByLabel("Select Kobo source files", { exact: true })
+    .setInputFiles([
+      {
+        name: "KoboReader.sqlite",
+        mimeType: "application/octet-stream",
+        buffer: await readFile(
+          path.resolve("fixtures/generated/KoboReader.sqlite"),
+        ),
+      },
+      {
+        name: "kobalt.sqlite",
+        mimeType: "application/octet-stream",
+        buffer: Buffer.from("not a SQLite database"),
+      },
+    ]);
+  await expect(
+    page.getByRole("button", { name: "Import into my library", exact: true }),
+  ).toBeInViewport();
+  await expect(
+    page.getByText(
+      "Some reader files could not be imported. Review the details before saving.",
+    ),
+  ).toBeVisible();
+  await expect(page.locator(".import-review")).not.toHaveAttribute("open", "");
+  await expect(page.locator(".import-history")).not.toHaveAttribute("open", "");
+  await page.getByText(/Review import details/).click();
+  await expect(page.locator(".diagnostics")).toContainText("kobalt.sqlite");
 });
