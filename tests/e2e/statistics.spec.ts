@@ -87,7 +87,7 @@ test("statistics filter measured time and generate a private cover share card of
   await expect(summary).toContainText("1h 41m");
   await page.getByLabel("Statistics year").selectOption("2026");
   await expect(summary).toContainText("30 sec");
-  await expect(summary).toContainText("Incomplete");
+  await expect(summary).toContainText("Partial imported history");
   await expect(
     page.getByLabel("Incomplete time history", { exact: true }),
   ).toContainText("Some reading activity has no timed session record.");

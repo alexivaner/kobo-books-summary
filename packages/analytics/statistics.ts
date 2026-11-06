@@ -6,7 +6,9 @@ import {
   isTimed,
   combinedTime,
   bookTime,
+  combineIntervals,
 } from "./rhythm";
+import { readingTimeline } from "./timeline";
 export type Period = { year: number | null; month: number | null };
 export type BookStatistic = {
   book: Book;
@@ -17,6 +19,7 @@ export type BookStatistic = {
   finished: boolean;
   lifetimeSeconds: number | null;
   unallocatedSeconds: number;
+  estimated: boolean;
 };
 export function inPeriod(value: string, period: Period) {
   const key = dayKey(value);
@@ -32,6 +35,7 @@ export function readingStatistics(
   source = "all",
 ) {
   const shelf = readingLibrary(input);
+  const timeline = readingTimeline(shelf, source);
   const books = shelf.books.filter(
       (b) => source === "all" || b.source === source,
     ),
@@ -39,6 +43,7 @@ export function readingStatistics(
   const all = recordedSessions(shelf).filter((s) => ids.has(s.bookId));
   const records = all.filter((s) => inPeriod(s.start, period)),
     timed = records.filter(isTimed);
+  const entries = timeline.entries.filter((s) => inPeriod(s.start, period));
   const groups = groupBooks(books),
     rows: BookStatistic[] = [];
   const canonical = new Map(
@@ -46,7 +51,9 @@ export function readingStatistics(
   );
   const activityKey = (s: (typeof records)[number]) =>
     `${canonical.get(s.bookId)}|${dayKey(s.start)}`;
-  const timedDays = new Set(timed.map(activityKey));
+  const timedDays = new Set(
+    entries.map((s) => `${canonical.get(s.bookId)}|${dayKey(s.start)}`),
+  );
   const completionDates = (b: Book) => [
     ...(b.readingHistory?.completedDates || []),
     ...(b.finishedAt ? [b.finishedAt] : []),
@@ -54,13 +61,14 @@ export function readingStatistics(
   for (const group of groups) {
     const members = new Set(group.members.map((b) => b.id)),
       events = records.filter((s) => members.has(s.bookId));
+    const intervals = entries.filter((s) => members.has(s.bookId));
     const time =
       period.year === null
         ? bookTime({ books: group.members, sessions: events })
         : (() => {
-            const v = combinedTime({ books: group.members, sessions: events });
+            const v = combineIntervals(group.members, intervals);
             return {
-              seconds: events.some(isTimed) ? v.seconds : null,
+              seconds: intervals.length ? v.seconds : null,
               minimum: v.overlaps,
             };
           })();
@@ -83,13 +91,19 @@ export function readingStatistics(
         : group.members.some((b) =>
             completionDates(b).some((d) => inPeriod(d, period)),
           );
-    if (events.length || (time.seconds ?? 0) > 0 || finished)
+    if (
+      events.length ||
+      intervals.length ||
+      (time.seconds ?? 0) > 0 ||
+      finished
+    )
       rows.push({
         book: group.book,
         seconds: time.seconds,
         minimum: time.minimum,
-        days: new Set(events.map((s) => dayKey(s.start))).size,
-        sessions: events.filter(isTimed).length,
+        days: new Set([...events, ...intervals].map((s) => dayKey(s.start)))
+          .size,
+        sessions: new Set(intervals.map((s) => s.id)).size,
         finished,
         lifetimeSeconds: lifetime.seconds,
         // A lifetime counter cannot be allocated using event/annotation dates.
@@ -97,21 +111,23 @@ export function readingStatistics(
           0,
           (lifetime.seconds ?? 0) - dated.seconds,
         ),
+        estimated: period.year !== null && intervals.some((s) => s.estimated),
       });
   }
   const time =
     period.year === null
       ? bookTime({ books, sessions: all })
       : (() => {
-          const v = combinedTime({ books, sessions: records });
+          const v = combineIntervals(books, entries);
           return {
-            seconds: timed.length ? v.seconds : null,
+            seconds: entries.length ? v.seconds : null,
             minimum: v.overlaps,
           };
         })();
   const years = [
     ...new Set([
       ...all.map((s) => Number(dayKey(s.start)!.slice(0, 4))),
+      ...timeline.entries.map((s) => Number(dayKey(s.start)!.slice(0, 4))),
       ...books.flatMap((b) =>
         completionDates(b)
           .map((d) => dayKey(d))
@@ -130,10 +146,15 @@ export function readingStatistics(
     source,
     seconds: time.seconds,
     minimum: time.minimum,
-    activeDays: new Set(records.map((s) => dayKey(s.start))).size,
+    activeDays: new Set([...records, ...entries].map((s) => dayKey(s.start)))
+      .size,
     books: rows.length,
     finished: rows.filter((r) => r.finished).length,
-    sessions: timed.length,
+    sessions: new Set(entries.map((s) => s.id)).size,
+    estimated: period.year !== null && entries.some((s) => s.estimated),
+    measuredSeconds: timed.length
+      ? combinedTime({ books, sessions: timed }).seconds
+      : null,
     undatedBooks: rows.filter((r) => r.seconds === null).length,
     unallocatedSeconds,
     incompleteTime,

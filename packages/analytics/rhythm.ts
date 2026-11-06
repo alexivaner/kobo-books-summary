@@ -61,13 +61,22 @@ export function readingDays(
  * for overlapping windows take the largest active-time counter in that cluster.
  */
 export function combinedTime(library: Pick<Library, "books" | "sessions">) {
+  return combineIntervals(
+    library.books,
+    recordedSessions(library).filter(isTimed),
+  );
+}
+export function combineIntervals(
+  books: Library["books"],
+  intervals: Pick<Session, "bookId" | "start" | "end" | "duration">[],
+) {
   const member = new Map(
-    groupBooks(library.books).flatMap((g) =>
+    groupBooks(books).flatMap((g) =>
       g.members.map((b) => [b.id, g.book.id] as const),
     ),
   );
-  const byBook = new Map<string, Session[]>();
-  for (const s of recordedSessions(library).filter(isTimed)) {
+  const byBook = new Map<string, typeof intervals>();
+  for (const s of intervals) {
     const key = member.get(s.bookId) || s.bookId;
     byBook.set(key, [...(byBook.get(key) || []), s]);
   }

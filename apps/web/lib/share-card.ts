@@ -82,20 +82,20 @@ export async function createShareCard(
     349,
   );
   c.fillStyle = cream;
-  c.font = `${stats.seconds === null || stats.incompleteTime ? 58 : 86}px Georgia`;
+  c.font = `${stats.seconds === null ? 58 : 86}px Georgia`;
   c.fillText(
     stats.seconds === null
       ? "Time not recorded"
-      : stats.incompleteTime
-        ? "Incomplete time history"
-        : `${stats.minimum ? "At least " : ""}${duration(stats.seconds)}`,
+      : `${stats.estimated ? "≈ " : stats.minimum ? "At least " : ""}${duration(stats.seconds)}`,
     108,
     452,
   );
   if (stats.incompleteTime && stats.seconds !== null) {
     c.font = "26px sans-serif";
     c.fillText(
-      `${duration(stats.seconds)} in imported timed sessions`,
+      stats.estimated
+        ? "Includes estimated elapsed time"
+        : "Partial imported history",
       108,
       495,
     );
@@ -179,7 +179,7 @@ export async function createShareCard(
             : "Dates unavailable"
           : row.seconds === null
             ? "Duration unavailable"
-            : `${row.minimum ? "≥ " : ""}${duration(row.seconds)}`,
+            : `${row.estimated ? "≈ " : row.minimum ? "≥ " : ""}${duration(row.seconds)}`,
         x,
         1210,
       );
@@ -195,9 +195,11 @@ export async function createShareCard(
   c.fillText(
     stats.period.year === null
       ? "Imported book totals · coverage may be incomplete"
-      : stats.incompleteTime
-        ? "Incomplete time history · dated sessions only"
-        : "Timed sessions only · some activity has no recorded duration",
+      : stats.estimated
+        ? "≈ Includes elapsed estimates · may include idle time"
+        : stats.incompleteTime
+          ? "Incomplete time history · dated sessions only"
+          : "Timed sessions only · some activity has no recorded duration",
     72,
     1280,
   );

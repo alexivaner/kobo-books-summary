@@ -3956,3 +3956,127 @@ textarea {
     flex-wrap: wrap;
   }
 }
+
+/* Keep the calendar and import actions in the primary viewport. */
+.rhythm-page .page-heading {
+  margin-bottom: 18px;
+}
+.rhythm-page .page-heading h1 {
+  font-size: 40px;
+}
+.rhythm-page .rhythm-toolbar {
+  margin-bottom: 18px;
+}
+.rhythm-page .rhythm-calendar > h2 {
+  margin-bottom: 16px;
+}
+.rhythm-metrics {
+  display: grid;
+  grid-template-columns: minmax(0, 1.7fr) repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--line);
+}
+.rhythm-metrics span {
+  display: block;
+  color: var(--muted);
+  font-size: 16px;
+}
+.rhythm-metrics strong {
+  display: block;
+  margin-top: 8px;
+  font:
+    28px/1.25 Georgia,
+    serif;
+}
+.rhythm-page .calendar-caption {
+  margin: 14px 0 18px;
+}
+.rhythm-day details > summary,
+.import-review > summary,
+.import-history > summary {
+  min-height: 48px;
+  padding: 12px 0;
+  cursor: pointer;
+}
+.session-time-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 0;
+  border-top: 1px solid var(--line);
+  font-size: 16px;
+}
+.preview > .section-heading {
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: center;
+}
+.preview > .section-heading .button-row {
+  margin: 0;
+}
+.preview > .section-heading h2 {
+  margin: 0;
+}
+.import-review {
+  border-top: 1px solid var(--line);
+  margin-top: 16px;
+}
+.import-review > summary {
+  font-weight: 600;
+}
+.import-attention {
+  padding: 12px 16px;
+  background: var(--pale);
+  border-left: 3px solid var(--green);
+  border-radius: 6px;
+}
+.import-history {
+  max-width: 860px;
+  margin: 20px auto;
+}
+.import-history > summary {
+  font-size: 20px;
+}
+.import-history > summary .counter {
+  margin-left: 12px;
+}
+@media (max-width: 600px) {
+  .rhythm-page .page-heading h1 {
+    font-size: 34px;
+  }
+  .rhythm-metrics {
+    grid-template-columns: minmax(0, 1.7fr) repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+  .rhythm-metrics span {
+    font-size: 14px;
+  }
+  .rhythm-metrics strong {
+    font-size: 24px;
+  }
+  .preview > .section-heading .button-row {
+    width: 100%;
+  }
+  .preview > .section-heading .primary {
+    flex: 1;
+  }
+}
+.rhythm-page .calendar-days button small {
+  white-space: nowrap;
+}
+@media (max-width: 600px) {
+  .rhythm-page .calendar-days button small {
+    font-size: 12px;
+    letter-spacing: -0.3px;
+  }
+  .rhythm-page .rhythm-toolbar > label {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .rhythm-page .rhythm-toolbar > label select {
+    flex: 1;
+  }
+}

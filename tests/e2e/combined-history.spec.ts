@@ -33,6 +33,9 @@ test("one calendar combines native Kobo history, Kobalt sessions and KOReader in
       "file:///mnt/onboard/The Quiet Atlas.epub",
       qtMap({ eventTimestamps: [Date.parse(date) / 1000] }),
     ]);
+  native.run(
+    "UPDATE Bookmark SET DateCreated='2026-08-14T12:00:00Z' WHERE BookmarkID='q1'",
+  );
   const stats = new SQL.Database();
   stats.run(
     "CREATE TABLE book(id INT,title TEXT,authors TEXT,md5 TEXT,total_read_time INT,last_open INT)",
@@ -94,33 +97,48 @@ test("one calendar combines native Kobo history, Kobalt sessions and KOReader in
     page.getByRole("region", { name: "Monthly reading summary" }),
   ).toContainText("Not recorded");
   await page.getByLabel("Reading month").fill("2026-09");
-  const estimates = page.getByRole("region", {
-    name: "Kobo session estimates",
-  });
-  await expect(estimates).toContainText("≈ 30 min");
-  await estimates.getByText("View dates, sessions & books").click();
-  await expect(estimates).toContainText("The Quiet Atlas");
-  await expect(estimates).toContainText("elapsed");
-  await page.getByRole("button", { name: /2026-09-21 · .* recorded/ }).click();
+  await page.getByRole("button", { name: /2026-09-21 · .* estimated/ }).click();
   await expect(selected).toContainText("Kobalt");
   await expect(selected).toContainText("KOReader");
+  await selected
+    .getByText(/view times/)
+    .first()
+    .click();
   await expect(selected).toContainText("9 sec");
   const monthly = page.getByRole("region", { name: "Monthly reading summary" });
   await expect(monthly).toContainText("Monthly reading time");
-  await expect(monthly).toContainText("Incomplete");
-  await expect(monthly).toContainText("Book totals · all time");
-  await expect(page.getByLabel("Monthly time coverage")).toBeVisible();
+  await expect(monthly).toContainText("≈ 31 min");
+  await expect(
+    page.getByRole("region", { name: "Kobo session estimates" }),
+  ).toHaveCount(0);
+  await page.getByLabel("Reading month").fill("2026-10");
+  await page
+    .getByRole("button", { name: "Previous month", exact: true })
+    .click();
+  await expect(page.getByLabel("Reading month")).toHaveValue("2026-09");
+  await expect(selected).toContainText("September 21");
+  await page
+    .getByRole("button", { name: "Previous month", exact: true })
+    .click();
+  await expect(page.getByLabel("Reading month")).toHaveValue("2026-08");
+  await expect(selected).toContainText("August 14");
+  await expect(monthly).toContainText("Not recorded");
+  await page.getByRole("button", { name: "Next month", exact: true }).click();
   await page.getByLabel("Rhythm reader").selectOption("kobo");
   await expect(
     page.getByRole("region", { name: "Monthly reading summary" }),
-  ).toContainText("Not recorded");
+  ).toContainText("≈ 30 min");
   await page.getByLabel("Rhythm reader").selectOption("all");
   await page.setViewportSize({ width: 390, height: 844 });
   await page.reload();
   await expect(coverage).toBeVisible();
   await page.getByLabel("Reading month").fill("2026-09");
-  await page.getByRole("button", { name: /2026-09-21 · .* recorded/ }).click();
+  await page.getByRole("button", { name: /2026-09-21 · .* estimated/ }).click();
   await expect(page.locator(".sidebar")).not.toBeInViewport();
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await expect(
+    page.getByRole("region", { name: "Reading calendar" }),
+  ).toBeInViewport();
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= innerWidth,
@@ -141,5 +159,23 @@ test("one calendar combines native Kobo history, Kobalt sessions and KOReader in
   await page.reload();
   await expect(coverage).toContainText("2026-03-15");
   await page.getByLabel("Reading month").fill("2026-09");
-  await expect(estimates).toContainText("≈ 30 min");
+  await expect(monthly).toContainText("≈ 31 min");
+  await page.getByRole("button", {name:"Open menu",exact:true}).click();
+  await page.getByRole("button", { name: "Statistics", exact: true }).click();
+  await page.getByLabel("Statistics year").selectOption("2026");
+  await page.getByLabel("Statistics month").selectOption("9");
+  await expect(
+    page.getByRole("region", { name: "Reading statistics summary" }),
+  ).toContainText("≈ 31 min");
+  await page
+    .getByRole("button", { name: "Create share card", exact: true })
+    .click();
+  const dialog = page.getByRole("dialog");
+  await expect(dialog.getByRole("img", { name: /Share card/ })).toBeVisible();
+  const [download] = await Promise.all([
+    page.waitForEvent("download"),
+    dialog.getByRole("button", { name: "Download PNG", exact: true }).click(),
+  ]);
+  expect(download.suggestedFilename()).toBe("readmory-2026-09.png");
+  await download.saveAs(testInfo.outputPath("estimated-month.png"));
 });
